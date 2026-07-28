@@ -12,20 +12,20 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password      String
-  digests       Digest[]
-  topics        Topic[]
-  seenArticles  SeenArticle[]
+  id             String          @id @default(uuid())
+  email          String          @unique
+  password       String
+  digests        Digest[]
+  topics         Topic[]
+  seenArticles   SeenArticle[]
   digestArticles DigestArticle[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt @default(now())
-  name          String
-  emailVerified Boolean   @default(false)
-  image         String?
-  sessions      Session[]
-  accounts      Account[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @default(now()) @updatedAt
+  name           String
+  emailVerified  Boolean         @default(false)
+  image          String?
+  sessions       Session[]
+  accounts       Account[]
 
   @@map("user")
 }
@@ -38,48 +38,48 @@ model Topic {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   digests   Digest[]
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@map("topic")
 }
 
 model Digest {
-  id        String   @id @default(uuid())
+  id        String          @id @default(uuid())
   headline  String
   consensus String
   conflict  String?
   signal    String
   articles  DigestArticle[]
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   topicId   String
-  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  topic     Topic           @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
 
   @@map("digest")
 }
 
 model DigestArticle {
-  id        String   @id @default(uuid())
-  title     String
-  url       String
-  oneLine   String
-  sourceId  String
-  reaction  Reaction?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  digestId  String
-  digest    Digest   @relation(fields: [digestId], references: [id], onDelete: Cascade)
+  id       String    @id @default(uuid())
+  title    String
+  url      String
+  oneLine  String
+  sourceId String
+  reaction Reaction?
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  digestId String
+  digest   Digest    @relation(fields: [digestId], references: [id], onDelete: Cascade)
 
   @@map("digest_article")
 }
 
 model SeenArticle {
-  id        String   @id @default(uuid())
-  urlHash   String
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  seenAt    DateTime @default(now())
+  id      String   @id @default(uuid())
+  urlHash String
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seenAt  DateTime @default(now())
 
   @@unique([urlHash, userId])
   @@index([seenAt])
