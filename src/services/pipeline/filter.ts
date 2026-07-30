@@ -1,4 +1,3 @@
-import { ArticleType } from "@/utils/extractor";
 import "dotenv/config";
 import { openai } from "@/lib/openai";
 import { RELEVANCY_SYSTEM_PROMPT } from "@/constants/prompts";
@@ -57,6 +56,149 @@ export const rateRelevancy = async (
   }
 };
 
+function populateRest(
+  shortlisted: ArticleWithTopic[],
+  remaining: ArticleWithTopic[],
+  difference: number,
+) {
+  let result: ArticleWithTopic[] = [];
+  let rest = [...remaining];
+
+  for (let i = 0; i < difference; i++) {
+    const allArticles = rest.map((a) => a.articles).flat();
+
+    const relevantArticle = allArticles.reduce(
+      (max, curr) =>
+        curr.keywordRelevancy! > max.keywordRelevancy! ? curr : max,
+      allArticles[0],
+    );
+
+    rest = rest.map((r) =>
+      r.topic === relevantArticle.topic
+        ? {
+            topic: r.topic,
+            articles: r.articles.filter((a) => a.id !== relevantArticle.id),
+          }
+        : r,
+    );
+
+    const index = shortlisted.findIndex(
+      (s) => s.topic === relevantArticle.topic,
+    );
+
+    if (i === 0) {
+      result = shortlisted.map(({ articles, topic }, i) =>
+        index === i
+          ? { topic, articles: articles.concat(relevantArticle) }
+          : { topic, articles },
+      );
+
+      continue;
+    }
+
+    result = result.map((item, i) =>
+      index === i
+        ? {
+            topic: item.topic,
+            articles: item.articles.concat(relevantArticle),
+          }
+        : item,
+    );
+  }
+
+  return result;
+}
+
+//Function to shortlist exactly upto the LLM Budget
+function shortlist(
+  scoredArticles: ArticleWithTopic[],
+  shortlistQuota: number,
+  totalBudget: number,
+) {
+  const remainingArticles: ArticleWithTopic[] = [];
+
+  const firstRoundArticles = scoredArticles.map((a) => {
+    const shortlisted = a.articles.slice(0, shortlistQuota);
+    const remaining = a.articles.slice(shortlistQuota, a.articles.length);
+
+    if (remaining.length) {
+      remainingArticles.push({
+        topic: remaining[0].topic!,
+        articles: remaining,
+      });
+    }
+
+    return {
+      topic: a.topic,
+      articles: shortlisted,
+    };
+  });
+
+  const numberOfArticles = firstRoundArticles
+    .map((a) => a.articles)
+    .flat().length;
+
+  if (numberOfArticles < totalBudget) {
+    const difference = totalBudget - numberOfArticles;
+
+    return populateRest(firstRoundArticles, remainingArticles, difference);
+  }
+
+  return firstRoundArticles;
+}
+
+function restrictToQuota(
+  topics: string[],
+  LLM_BUDGET: number,
+  DIGEST_BUDGET: number,
+  withLLMRating: ArticleWithTopic[],
+) {
+  switch (topics.length) {
+    case 1:
+      return withLLMRating[0].articles.slice(0, DIGEST_BUDGET);
+    case 2: {
+      const [firstTopic, secondTopic] = withLLMRating.map((w) =>
+        w.articles.slice(0, LLM_BUDGET / 2),
+      );
+
+      const firstTopicOption = withLLMRating[0].articles[2];
+      const secondTopicOption = withLLMRating[1].articles[2];
+
+      return firstTopicOption.contentRelevancy! >=
+        secondTopicOption.contentRelevancy!
+        ? [...firstTopic, ...secondTopic, firstTopicOption]
+        : [...firstTopic, ...secondTopic, secondTopicOption];
+    }
+
+    case 3: {
+      const firstChoiceArticles = withLLMRating.map((t) => t.articles[0]);
+      const nextHighestRatingArticles = withLLMRating
+        .map((t) => t.articles[1])
+        .sort((a, b) => b.contentRelevancy! - a.contentRelevancy!)
+        .slice(0, 2);
+
+      return [...firstChoiceArticles, ...nextHighestRatingArticles];
+    }
+
+    case 4: {
+      const firstChoiceArticles = withLLMRating.map((t) => t.articles[0]);
+
+      const extraArticle = withLLMRating
+        .map((t) => t.articles[1])
+        .sort((a, b) => b.contentRelevancy! - a.contentRelevancy!)
+        .slice(0, 2);
+
+      return [...firstChoiceArticles, ...extraArticle];
+    }
+
+    case 5: {
+      const firstChoiceArticles = withLLMRating.map((t) => t.articles[0]);
+
+      return firstChoiceArticles;
+    }
+  }
+}
+
 export const filterArticles = async (
   groups: ArticleWithTopic[],
   topics: string[],
@@ -65,7 +207,6 @@ export const filterArticles = async (
   // articles per topic
   const LLM_BUDGET = 20;
   const DIGEST_BUDGET = 5;
-  const TOTAL_ARTICLES = groups.map((g) => g.articles).flat().length;
   const SHORTLISTED_PER_TOPIC = Math.abs(LLM_BUDGET / topics.length);
 
   // Rearranges the articles array in each group item
@@ -102,52 +243,13 @@ export const filterArticles = async (
     };
   });
 
-  // Keeps no. of articles limited to quota per topic
-  const mostRelevant = scoredGroups.map((g) => ({
-    topic: g.topic,
-    articles: g.articles.slice(
-      0,
-      Math.min(SHORTLISTED_PER_TOPIC, g.articles.length),
-    ),
-  }));
+  const shortlisted = shortlist(
+    scoredGroups,
+    SHORTLISTED_PER_TOPIC,
+    LLM_BUDGET,
+  );
 
-  const countOfShortlistedArticles = mostRelevant
-    .map((a) => a.articles)
-    .flat().length;
-
-  const trackerSet = new Set<ArticleType>([]);
-
-  if (countOfShortlistedArticles < LLM_BUDGET) {
-    const extraSlots = LLM_BUDGET - countOfShortlistedArticles;
-
-    for (let i = 0; i < extraSlots; i++) {
-      const highestRatedArticle = mostRelevant
-        .map((m) => m.articles)
-        .flat()
-        .reduce((max, curr) =>
-          curr.keywordRelevancy > max.keywordRelevancy ? curr : max,
-        );
-
-      trackerSet.add(highestRatedArticle);
-
-      const targetGroup = mostRelevant.find(
-        (m) => m.topic === highestRatedArticle.topic,
-      );
-
-      targetGroup?.articles.splice(
-        targetGroup?.articles.findIndex((a) => a.id === highestRatedArticle.id),
-        1,
-      );
-
-      mostRelevant.splice(
-        mostRelevant.findIndex((m) => m.topic === targetGroup?.topic),
-        1,
-        targetGroup!,
-      );
-    }
-  }
-
-  const relevancyResponse = await rateRelevancy(mostRelevant);
+  const relevancyResponse = await rateRelevancy(shortlisted);
 
   const relevancyScores: RatingType[] = (
     typeof relevancyResponse === "string"
@@ -155,21 +257,24 @@ export const filterArticles = async (
       : relevancyResponse
   ).ratings;
 
-  const withLLMRating = mostRelevant.map((m) => {
+  const withLLMRating = shortlisted.map((m) => {
     const articles = m.articles.map((a) => ({
       ...a,
       contentRelevancy: relevancyScores.find((r) => r.id === a.id)?.score,
     }));
+
     return {
       topic: m.topic,
       articles,
     };
   });
 
-  return topArticles.map((a) => ({
-    id: a.id,
-    title: a.title!,
-    url: a.url!,
-    content: a.article!,
-  }));
+  const finalQuotaApplied = restrictToQuota(
+    topics,
+    LLM_BUDGET,
+    DIGEST_BUDGET,
+    withLLMRating,
+  )!;
+
+  return finalQuotaApplied;
 };

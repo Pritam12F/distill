@@ -60,10 +60,10 @@ async function pipeline(topics: string[]): Promise<PipelineOutputType> {
 
   await hashArticles(
     session.user.id,
-    topArticles.map((a) => a.url),
+    topArticles.map((a) => a.url!),
   );
 
-  const digest = await synthesise(topics, topArticles);
+  const digest = await Promise.all(topArticles.map((t)=>t.));
 
   const digestRepo = await addDigestToRepo(session.session.id, digest);
 }
