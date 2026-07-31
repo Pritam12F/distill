@@ -19,7 +19,7 @@ export const synthesisSchema = z.object({
   ),
 });
 
-export async function synthesise(
+export async function synthesiseDigest(
   topic: string,
   articles: { id: string; title: string; url: string; content: string }[],
 ) {

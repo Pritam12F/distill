@@ -4,14 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const topicId = body.topicId;
-
-  if (!topicId) {
-    return NextResponse.json(
-      { error: "topicId not provided" },
-      { status: 402 },
-    );
-  }
 
   const { success, data } = updateTopicSchema.safeParse(body.data);
 
@@ -22,14 +14,17 @@ export async function POST(req: NextRequest) {
   try {
     await prisma.topic.update({
       where: {
-        id: topicId,
+        id: data.topicId,
       },
       data: {
         name: data.name,
       },
     });
 
-    return NextResponse.json({ message: "Topic was updated", topicId });
+    return NextResponse.json({
+      message: "Topic was updated",
+      topicId: data.topicId,
+    });
   } catch (e) {
     console.error(e);
 

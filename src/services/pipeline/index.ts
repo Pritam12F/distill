@@ -4,9 +4,9 @@ import { getNewsData } from "./newsapi";
 import { rssScraper } from "./rss";
 import { removeDuplicates } from "./deduplicate";
 import { filterArticles } from "./filter";
-import { synthesise } from "./digest-generator";
+import { synthesiseDigest } from "./digest-generator";
 import { hashArticles } from "./hasher";
-import { addDigestToRepo } from "./digest-repository";
+import { addDigestsToRepo, DigestType } from "./digest-repository";
 import { ArticleType } from "@/utils/extractor";
 
 type PipelineOutputType = {
@@ -14,7 +14,24 @@ type PipelineOutputType = {
   message: string;
 };
 
-async function pipeline(topics: string[]): Promise<PipelineOutputType> {
+type DigestRepoType = {
+  digestCount: number;
+  articleCount: number;
+  digests: {
+    id: string;
+    headline: string;
+    topicId: string;
+    articles: {
+      id: string;
+      title: string;
+      url: string;
+    }[];
+  }[];
+};
+
+export async function pipeline(
+  topics: { name: string; id: string }[],
+): Promise<PipelineOutputType | (PipelineOutputType & DigestRepoType)> {
   if (!topics.length) {
     return {
       success: false,
@@ -41,13 +58,13 @@ async function pipeline(topics: string[]): Promise<PipelineOutputType> {
 
   const newsAPIArticles: ArticleType[][] = await Promise.all(
     topics.map(async (t) =>
-      (await getNewsData(t)).map((a) => ({ ...a, topic: t })),
+      (await getNewsData(t.name)).map((a) => ({ ...a, topic: t.name })),
     ),
   );
 
   const rssArticles: ArticleType[][] = await Promise.all(
     topics.map(async (t) =>
-      (await rssScraper(t)).map((a) => ({ ...a, topic: t })),
+      (await rssScraper(t.name)).map((a) => ({ ...a, topic: t.name })),
     ),
   );
 
@@ -56,14 +73,44 @@ async function pipeline(topics: string[]): Promise<PipelineOutputType> {
     rssArticles.flat(),
   );
 
-  const topArticles = await filterArticles(deduplicated, topics);
+  const topArticles = await filterArticles(deduplicated);
+
+  const topicIdByName = new Map(topics.map((t) => [t.name, t.id]));
+
+  const digests: (DigestType & { topic: string; topicId: string })[] =
+    await Promise.all(
+      topArticles.map(async (a) => {
+        const generated = await synthesiseDigest(
+          a.topic,
+          a.articles.map((a) => ({
+            id: a.id,
+            title: a.title!,
+            url: a.url!,
+            content: a.article,
+          })),
+        );
+
+        return {
+          topic: a.topic,
+          topicId: topicIdByName.get(a.topic)!,
+          ...generated,
+        };
+      }),
+    );
+
+  const digestRepo = await addDigestsToRepo(session.session.id, digests);
 
   await hashArticles(
     session.user.id,
-    topArticles.map((a) => a.url!),
+    digestRepo.digests
+      .map((a) => a.articles)
+      .flat()
+      .map((a) => a.url),
   );
 
-  const digest = await Promise.all(topArticles.map((t)=>t.));
-
-  const digestRepo = await addDigestToRepo(session.session.id, digest);
+  return {
+    ...digestRepo,
+    success: true,
+    message: "Digest was added to DB successfully",
+  };
 }

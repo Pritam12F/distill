@@ -56,158 +56,11 @@ export const rateRelevancy = async (
   }
 };
 
-function populateRest(
-  shortlisted: ArticleWithTopic[],
-  remaining: ArticleWithTopic[],
-  difference: number,
-) {
-  let result: ArticleWithTopic[] = [];
-  let rest = [...remaining];
-
-  for (let i = 0; i < difference; i++) {
-    const allArticles = rest.map((a) => a.articles).flat();
-
-    const relevantArticle = allArticles.reduce(
-      (max, curr) =>
-        curr.keywordRelevancy! > max.keywordRelevancy! ? curr : max,
-      allArticles[0],
-    );
-
-    rest = rest.map((r) =>
-      r.topic === relevantArticle.topic
-        ? {
-            topic: r.topic,
-            articles: r.articles.filter((a) => a.id !== relevantArticle.id),
-          }
-        : r,
-    );
-
-    const index = shortlisted.findIndex(
-      (s) => s.topic === relevantArticle.topic,
-    );
-
-    if (i === 0) {
-      result = shortlisted.map(({ articles, topic }, i) =>
-        index === i
-          ? { topic, articles: articles.concat(relevantArticle) }
-          : { topic, articles },
-      );
-
-      continue;
-    }
-
-    result = result.map((item, i) =>
-      index === i
-        ? {
-            topic: item.topic,
-            articles: item.articles.concat(relevantArticle),
-          }
-        : item,
-    );
-  }
-
-  return result;
-}
-
-//Function to shortlist exactly upto the LLM Budget
-function shortlist(
-  scoredArticles: ArticleWithTopic[],
-  shortlistQuota: number,
-  totalBudget: number,
-) {
-  const remainingArticles: ArticleWithTopic[] = [];
-
-  const firstRoundArticles = scoredArticles.map((a) => {
-    const shortlisted = a.articles.slice(0, shortlistQuota);
-    const remaining = a.articles.slice(shortlistQuota, a.articles.length);
-
-    if (remaining.length) {
-      remainingArticles.push({
-        topic: remaining[0].topic!,
-        articles: remaining,
-      });
-    }
-
-    return {
-      topic: a.topic,
-      articles: shortlisted,
-    };
-  });
-
-  const numberOfArticles = firstRoundArticles
-    .map((a) => a.articles)
-    .flat().length;
-
-  if (numberOfArticles < totalBudget) {
-    const difference = totalBudget - numberOfArticles;
-
-    return populateRest(firstRoundArticles, remainingArticles, difference);
-  }
-
-  return firstRoundArticles;
-}
-
-function restrictToQuota(
-  topics: string[],
-  LLM_BUDGET: number,
-  DIGEST_BUDGET: number,
-  withLLMRating: ArticleWithTopic[],
-) {
-  switch (topics.length) {
-    case 1:
-      return withLLMRating[0].articles.slice(0, DIGEST_BUDGET);
-    case 2: {
-      const [firstTopic, secondTopic] = withLLMRating.map((w) =>
-        w.articles.slice(0, LLM_BUDGET / 2),
-      );
-
-      const firstTopicOption = withLLMRating[0].articles[2];
-      const secondTopicOption = withLLMRating[1].articles[2];
-
-      return firstTopicOption.contentRelevancy! >=
-        secondTopicOption.contentRelevancy!
-        ? [...firstTopic, ...secondTopic, firstTopicOption]
-        : [...firstTopic, ...secondTopic, secondTopicOption];
-    }
-
-    case 3: {
-      const firstChoiceArticles = withLLMRating.map((t) => t.articles[0]);
-      const nextHighestRatingArticles = withLLMRating
-        .map((t) => t.articles[1])
-        .sort((a, b) => b.contentRelevancy! - a.contentRelevancy!)
-        .slice(0, 2);
-
-      return [...firstChoiceArticles, ...nextHighestRatingArticles];
-    }
-
-    case 4: {
-      const firstChoiceArticles = withLLMRating.map((t) => t.articles[0]);
-
-      const extraArticle = withLLMRating
-        .map((t) => t.articles[1])
-        .sort((a, b) => b.contentRelevancy! - a.contentRelevancy!)
-        .slice(0, 2);
-
-      return [...firstChoiceArticles, ...extraArticle];
-    }
-
-    case 5: {
-      const firstChoiceArticles = withLLMRating.map((t) => t.articles[0]);
-
-      return firstChoiceArticles;
-    }
-  }
-}
-
-export const filterArticles = async (
-  groups: ArticleWithTopic[],
-  topics: string[],
-) => {
+export const filterArticles = async (groups: ArticleWithTopic[]) => {
   // Total budget just to get a rough idea of
   // articles per topic
-  const LLM_BUDGET = 20;
-  const DIGEST_BUDGET = 5;
-  const SHORTLISTED_PER_TOPIC = Math.abs(LLM_BUDGET / topics.length);
+  const SHORTLISTED_PER_TOPIC = 5;
+  const LLM_SHORTLISTED_PER_TOPIC = 3;
 
   // Rearranges the articles array in each group item
   // based on keywordRelevancy field
@@ -243,11 +96,13 @@ export const filterArticles = async (
     };
   });
 
-  const shortlisted = shortlist(
-    scoredGroups,
-    SHORTLISTED_PER_TOPIC,
-    LLM_BUDGET,
-  );
+  const shortlisted = scoredGroups.map((g) => ({
+    topic: g.topic,
+    articles: g.articles.slice(
+      0,
+      Math.min(g.articles.length, SHORTLISTED_PER_TOPIC),
+    ),
+  }));
 
   const relevancyResponse = await rateRelevancy(shortlisted);
 
@@ -257,7 +112,7 @@ export const filterArticles = async (
       : relevancyResponse
   ).ratings;
 
-  const withLLMRating = shortlisted.map((m) => {
+  const llmQuotaApplied = shortlisted.map((m) => {
     const articles = m.articles.map((a) => ({
       ...a,
       contentRelevancy: relevancyScores.find((r) => r.id === a.id)?.score,
@@ -265,16 +120,12 @@ export const filterArticles = async (
 
     return {
       topic: m.topic,
-      articles,
+      articles: articles.slice(
+        0,
+        Math.min(articles.length, LLM_SHORTLISTED_PER_TOPIC),
+      ),
     };
   });
 
-  const finalQuotaApplied = restrictToQuota(
-    topics,
-    LLM_BUDGET,
-    DIGEST_BUDGET,
-    withLLMRating,
-  )!;
-
-  return finalQuotaApplied;
+  return llmQuotaApplied;
 };

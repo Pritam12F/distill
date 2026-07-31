@@ -8,7 +8,10 @@ export const getTopicSchema = z.object({
   userId: z.string().min(1, "User Id is needed").max(100),
 });
 
-export const updateTopicSchema = topicSchema.partial();
+export const updateTopicSchema = z.object({
+  topicId: z.uuid(),
+  name: z.string().min(1, "Name is required").max(100),
+});
 
 export const getDigestSchema = z.object({
   userId: z.string().min(1, "User Id is needed").max(100),
