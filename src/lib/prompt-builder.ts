@@ -13,7 +13,7 @@ export function buildSynthesisUserPrompt(
       (a) => `[${a.id}]
   Title: ${a.title}
   URL: ${a.url}
-  Content: ${a.content.slice(0, 1500)}`,
+  Content: ${a.content.slice(0, 500)}`,
     )
     .join("\n\n---\n\n")}
    
@@ -30,7 +30,7 @@ ${articles
   .map(
     (a) => `[${a.id}]
 Title: ${a.title}
-Content: ${a.article}`,
+Content: ${a.article.slice(0, 300)}`,
   )
   .join("\n\n---\n\n")}`,
     )

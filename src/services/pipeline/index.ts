@@ -1,13 +1,13 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { getNewsData } from "./newsapi";
-import { rssScraper } from "./rss";
 import { removeDuplicates } from "./deduplicate";
 import { filterArticles } from "./filter";
 import { synthesiseDigest } from "./digest-generator";
-import { hashArticles } from "./hasher";
-import { addDigestsToRepo, DigestType } from "./digest-repository";
-import { ArticleType } from "@/utils/extractor";
+import { addDigestsToRepo } from "./digest-repository";
+import { prisma } from "@/lib/prisma";
+import { getArticles } from "./scrapers";
+import { JsonValue } from "@prisma/client/runtime/client";
+import { promiseResolver } from "@/utils/resolver";
 
 type PipelineOutputType = {
   success: boolean;
@@ -29,22 +29,18 @@ type DigestRepoType = {
   }[];
 };
 
-export async function pipeline(
-  topics: { name: string; id: string }[],
-): Promise<PipelineOutputType | (PipelineOutputType & DigestRepoType)> {
-  if (!topics.length) {
-    return {
-      success: false,
-      message: "No topic provided",
-    };
-  }
+export type TopicsType = {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+  name: string;
+  sources: JsonValue;
+};
 
-  if (topics.length > 5)
-    return {
-      success: false,
-      message: "No of topics selected greater than 5",
-    };
-
+export async function pipeline(): Promise<
+  PipelineOutputType | (PipelineOutputType & DigestRepoType)
+> {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -56,61 +52,100 @@ export async function pipeline(
     };
   }
 
-  const newsAPIArticles: ArticleType[][] = await Promise.all(
-    topics.map(async (t) =>
-      (await getNewsData(t.name)).map((a) => ({ ...a, topic: t.name })),
-    ),
-  );
+  const topics: TopicsType[] = await prisma.topic.findMany({
+    where: { userId: session.user.id },
+  });
 
-  const rssArticles: ArticleType[][] = await Promise.all(
-    topics.map(async (t) =>
-      (await rssScraper(t.name)).map((a) => ({ ...a, topic: t.name })),
-    ),
-  );
+  if (!topics.length) {
+    return {
+      success: false,
+      message: "User has not selected any topics",
+    };
+  }
 
-  const deduplicated = await removeDuplicates(
-    newsAPIArticles.flat(),
-    rssArticles.flat(),
-  );
+  try {
+    const articles = await getArticles(topics);
 
-  const topArticles = await filterArticles(deduplicated);
+    const deduplicated = await removeDuplicates(articles, session.user.id);
 
-  const topicIdByName = new Map(topics.map((t) => [t.name, t.id]));
+    const topArticles = await filterArticles(deduplicated);
 
-  const digests: (DigestType & { topic: string; topicId: string })[] =
-    await Promise.all(
+    const topicIdByName = new Map(topics.map((t) => [t.name, t.id]));
+
+    const digests = await Promise.allSettled(
       topArticles.map(async (a) => {
-        const generated = await synthesiseDigest(
-          a.topic,
-          a.articles.map((a) => ({
-            id: a.id,
-            title: a.title!,
-            url: a.url!,
-            content: a.article,
-          })),
-        );
+        if (a.articles.length) {
+          const generated = await synthesiseDigest(
+            a.topic,
+            a.articles.map((art) => ({
+              id: art.id,
+              title: art.title!,
+              url: art.url!,
+              content: art.article,
+            })),
+          );
 
-        return {
-          topic: a.topic,
-          topicId: topicIdByName.get(a.topic)!,
-          ...generated,
-        };
+          // publishedAt is source metadata (not produced by the LLM), so join
+          // it back onto each synthesised article by its source id.
+          const publishedAtById = new Map(
+            a.articles.map((art) => [art.id, art.publishedAt ?? null]),
+          );
+
+          return {
+            topic: a.topic,
+            topicId: topicIdByName.get(a.topic)!,
+            ...generated,
+            articles: generated.articles.map((art) => ({
+              ...art,
+              publishedAt: publishedAtById.get(art.id) ?? null,
+            })),
+          };
+        }
       }),
     );
 
-  const digestRepo = await addDigestsToRepo(session.session.id, digests);
+    digests.forEach((d, i) => {
+      if (d.status === "rejected") {
+        console.error(
+          `Synthesis failed for topic "${topArticles[i].topic}":`,
+          d.reason,
+        );
+      }
+    });
 
-  await hashArticles(
-    session.user.id,
-    digestRepo.digests
-      .map((a) => a.articles)
-      .flat()
-      .map((a) => a.url),
-  );
+    const resolvedDigests = promiseResolver(digests);
 
-  return {
-    ...digestRepo,
-    success: true,
-    message: "Digest was added to DB successfully",
-  };
+    if (!resolvedDigests.length) {
+      return {
+        success: false,
+        message:
+          "No digests to create — all articles were filtered out, already seen, or synthesis failed.",
+      };
+    }
+
+    const digestRepo = await addDigestsToRepo(session.user.id, resolvedDigests);
+
+    if (!digestRepo.digestCount) {
+      return {
+        success: false,
+        message: "Failed to save any digests to the database.",
+      };
+    }
+
+    return {
+      ...digestRepo,
+      success: true,
+      message: "Digest was added to DB successfully",
+    };
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Unknown pipeline error occured";
+
+    console.log(message);
+
+    return {
+      success: false,
+      message,
+    };
+  }
 }

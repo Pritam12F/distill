@@ -1,17 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { synthesisSchema } from "./digest-generator";
 import z from "zod";
+import { hashUrl } from "./hasher";
+import { promiseResolver } from "@/utils/resolver";
 
 export type DigestType = z.infer<typeof synthesisSchema>;
 
 export async function addDigestsToRepo(
   userId: string,
-  digests: (DigestType & { topic: string; topicId: string })[],
+  digests: (Omit<DigestType, "articles"> & {
+    topic: string;
+    topicId: string;
+    articles: (DigestType["articles"][number] & {
+      publishedAt: Date | string | null;
+    })[];
+  })[],
 ) {
   // Each digest and its articles are written in their own transaction, so a
   // failure while writing one digest never leaves it half-persisted, and the
   // other digests are unaffected.
-  const added = await Promise.all(
+  const added = await Promise.allSettled(
     digests.map((d) =>
       prisma.$transaction(async (tx) => {
         const digest = await tx.digest.create({
@@ -27,15 +35,29 @@ export async function addDigestsToRepo(
         });
 
         const articles = await tx.digestArticle.createManyAndReturn({
-          data: d.articles.map((a) => ({
-            title: a.title,
-            url: a.url,
-            oneLine: a.oneLine,
-            sourceId: a.id,
-            digestId: digest.id,
-            userId,
-          })),
+          data: d.articles.map((a) => {
+            const parsedDate = a.publishedAt ? new Date(a.publishedAt) : null;
+
+            return {
+              title: a.title,
+              url: a.url,
+              oneLine: a.oneLine,
+              sourceId: a.id,
+              publishedAt:
+                parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : null,
+              digestId: digest.id,
+              userId,
+            };
+          }),
           select: { id: true, title: true, url: true },
+        });
+
+        await tx.seenArticle.createMany({
+          data: articles.map((a) => ({
+            userId,
+            urlHash: hashUrl(a.url),
+          })),
+          skipDuplicates: true,
         });
 
         return { ...digest, articles };
@@ -43,14 +65,23 @@ export async function addDigestsToRepo(
     ),
   );
 
+  added.forEach((result, i) => {
+    if (result.status === "rejected") {
+      console.error(
+        `Failed to persist digest for topic "${digests[i].topic}":`,
+        result.reason,
+      );
+    }
+  });
+
+  const addedResolved = promiseResolver(added);
+
   return {
-    digestCount: added.length,
-    articleCount: added.reduce((total, d) => total + d.articles.length, 0),
-    digests: added.map((d) => ({
-      id: d.id,
-      headline: d.headline,
-      topicId: d.topicId,
-      articles: d.articles,
-    })),
+    digestCount: addedResolved.length,
+    articleCount: addedResolved.reduce(
+      (total, d) => total + d.articles.length,
+      0,
+    ),
+    digests: addedResolved,
   };
 }

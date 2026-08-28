@@ -1,17 +1,24 @@
 import "dotenv/config";
-import { openai } from "@/lib/openai";
+import { openai } from "@ai-sdk/openai";
 import { RELEVANCY_SYSTEM_PROMPT } from "@/constants/prompts";
 import { buildRelevancyUserPrompt } from "@/lib/prompt-builder";
 import { ArticleWithTopic } from "./deduplicate";
+import { z } from "zod";
+import { generateObject } from "ai";
 
-export interface RatingType {
-  id: string;
-  score: number;
-}
+const RatingSchema = z.object({
+  id: z.string().min(1, "Id should not be empty"),
+  score: z.number(),
+});
+
+const RatingGenerationSchema = z.array(RatingSchema);
+
+export type RatingType = z.infer<typeof RatingSchema>;
+export type RatingGenerationType = z.infer<typeof RatingGenerationSchema>;
 
 export const rateRelevancy = async (
   groups: ArticleWithTopic[],
-): Promise<{ ratings: RatingType[] } | string> => {
+): Promise<RatingGenerationType> => {
   const isDevMode = process.env.DEV_MODE === "true";
 
   if (isDevMode) {
@@ -35,38 +42,35 @@ export const rateRelevancy = async (
       score: number;
     }[];
 
-    return {
-      ratings: [...flattenedItems, ...singleItems],
-    };
+    return [...singleItems, ...flattenedItems];
   }
 
   const userPrompt = buildRelevancyUserPrompt(groups);
 
   try {
-    const response = await openai.responses.create({
-      model: "gpt-5-nano",
-      instructions: RELEVANCY_SYSTEM_PROMPT,
-      input: userPrompt,
+    const { object } = await generateObject({
+      output: "array",
+      model: openai("gpt-5-mini"),
+      system: RELEVANCY_SYSTEM_PROMPT,
+      prompt: userPrompt,
+      schema: RatingSchema,
     });
 
-    return response.output_text;
+    return object;
   } catch (e) {
     console.log(e instanceof Error ? e.message : "Error calling openAI");
     throw new Error("Error calling openAI");
   }
 };
 
-export const filterArticles = async (groups: ArticleWithTopic[]) => {
-  // Total budget just to get a rough idea of
-  // articles per topic
+export const filterArticles = async (
+  groups: ArticleWithTopic[],
+): Promise<ArticleWithTopic[]> => {
   const SHORTLISTED_PER_TOPIC = 5;
   const LLM_SHORTLISTED_PER_TOPIC = 3;
-
-  // Rearranges the articles array in each group item
-  // based on keywordRelevancy field
-  // Starting with the highest
-
   const scoredGroups = groups.map((g) => {
+    const topicWord = new Set(g.topic.trim().toLocaleLowerCase().split(/\s+/));
+
     return {
       topic: g.topic,
       articles: g.articles
@@ -75,16 +79,18 @@ export const filterArticles = async (groups: ArticleWithTopic[]) => {
 
           a.title
             ?.trim()
-            .split(" ")
+            .toLocaleLowerCase()
+            .split(/\s+/)
             .forEach((word) => {
-              if (g.topic.includes(word.trim())) wordCountRelevancy++;
+              if (topicWord.has(word)) wordCountRelevancy++;
             });
 
           a.article
             ?.trim()
-            .split(" ")
+            .toLocaleLowerCase()
+            .split(/\s+/)
             .forEach((word) => {
-              if (g.topic.includes(word.trim())) wordCountRelevancy++;
+              if (topicWord.has(word)) wordCountRelevancy++;
             });
 
           return {
@@ -104,19 +110,32 @@ export const filterArticles = async (groups: ArticleWithTopic[]) => {
     ),
   }));
 
-  const relevancyResponse = await rateRelevancy(shortlisted);
+  const relevancyScoresMap = new Map<string, number>();
 
-  const relevancyScores: RatingType[] = (
-    typeof relevancyResponse === "string"
-      ? JSON.parse(relevancyResponse)
-      : relevancyResponse
-  ).ratings;
+  try {
+    const results = await rateRelevancy(shortlisted);
+
+    results.forEach((r) => {
+      if (r.id != null) {
+        relevancyScoresMap.set(r.id, r.score);
+      }
+    });
+  } catch (e) {
+    console.error(
+      "Relevancy rating failed; falling back to keyword ranking:",
+      e instanceof Error ? e.message : e,
+    );
+  }
 
   const llmQuotaApplied = shortlisted.map((m) => {
-    const articles = m.articles.map((a) => ({
-      ...a,
-      contentRelevancy: relevancyScores.find((r) => r.id === a.id)?.score,
-    }));
+    const articles = m.articles
+      .map((a) => ({
+        ...a,
+        contentRelevancy: relevancyScoresMap.has(a.id)
+          ? relevancyScoresMap.get(a.id)
+          : 0,
+      }))
+      .sort((a, b) => b.contentRelevancy! - a.contentRelevancy!);
 
     return {
       topic: m.topic,

@@ -11,6 +11,7 @@ export type ArticleType = {
   article: string;
   siteName?: string | null;
   length: number;
+  publishedAt?: Date | string | null;
   keywordRelevancy?: number;
   contentRelevancy?: number;
 };
@@ -105,5 +106,3 @@ export async function extractContent(url: string) {
     url,
   };
 }
-
-extractContent("https://simonwillison.net");

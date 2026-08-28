@@ -60,16 +60,17 @@ model Digest {
 }
 
 model DigestArticle {
-  id       String    @id @default(uuid())
-  title    String
-  url      String
-  oneLine  String
-  sourceId String
-  reaction Reaction?
-  userId   String
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  digestId String
-  digest   Digest    @relation(fields: [digestId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  title       String
+  url         String
+  oneLine     String
+  sourceId    String
+  publishedAt DateTime?
+  reaction    Reaction?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  digestId    String
+  digest      Digest    @relation(fields: [digestId], references: [id], onDelete: Cascade)
 
   @@map("digest_article")
 }

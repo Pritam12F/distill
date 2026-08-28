@@ -1,5 +1,7 @@
+import { prisma } from "@/lib/prisma";
 import { ArticleType } from "@/utils/extractor";
 import stringComparison from "string-comparison";
+import { hashUrl } from "./hasher";
 
 export type ArticleWithTopic = {
   topic: string;
@@ -7,42 +9,67 @@ export type ArticleWithTopic = {
 };
 
 export async function removeDuplicates(
-  newsSources: ArticleType[],
-  rssSources: ArticleType[],
+  articles: ArticleType[],
+  userId: string,
 ) {
+  const seenArticlesFetched = await prisma.seenArticle.findMany({
+    where: {
+      userId,
+    },
+  });
+
+  // Articles the user has already seen in a previous run — tracked per-user,
+  // independent of topic.
+  const hashedUrls = new Set(seenArticlesFetched.map((a) => a.urlHash));
+
   const cos = stringComparison.cosine;
 
   const results: ArticleWithTopic[] = [];
 
-  const allSources: ArticleType[] = [...newsSources, ...rssSources];
+  // URLs already taken within each topic, keyed by topic. Dedup is per-topic,
+  // so the same article can still appear under a different topic.
+  const urlsByTopic = new Map<string, Set<string>>();
 
-  for (let i = 0; i < allSources.length; i++) {
-    const foundTopic = results.find((r) => r.topic === allSources[i].topic);
+  for (const article of articles) {
+    if (!article.url) continue;
+
+    const urlHash = hashUrl(article.url);
+
+    // Skip anything already shown to the user in a previous run.
+    if (hashedUrls.has(urlHash)) continue;
+
+    const topic = article.topic!;
+
+    let foundTopic = results.find((r) => r.topic === topic);
 
     if (!foundTopic) {
-      results.push({
-        topic: allSources[i].topic!,
-        articles: [{ ...allSources[i] }],
-      });
-
-      continue;
+      foundTopic = { topic, articles: [] };
+      results.push(foundTopic);
+      urlsByTopic.set(topic, new Set());
     }
 
-    if (
-      foundTopic.articles.some(
-        (a) => cos.similarity(a.title!, allSources[i].title!) >= 0.85,
-      )
-    ) {
-      continue;
-    }
+    const topicUrls = urlsByTopic.get(topic)!;
 
-    foundTopic.articles.push(allSources[i]);
+    // Per-topic URL dedup: the same URL twice within one topic is dropped.
+    if (topicUrls.has(urlHash)) continue;
 
-    results.splice(
-      results.findIndex((r) => r.topic === foundTopic.topic),
-      1,
-      foundTopic,
-    );
+    // Per-topic similarity dedup: compare only against this topic's articles.
+    const isDuplicate = foundTopic.articles.some((a) => {
+      if (!a.title || !article.title) {
+        if (!a.article || !article.article) {
+          return false;
+        }
+
+        return cos.similarity(a.article, article.article) >= 0.78;
+      }
+
+      return cos.similarity(a.title, article.title) >= 0.78;
+    });
+
+    if (isDuplicate) continue;
+
+    topicUrls.add(urlHash);
+    foundTopic.articles.push(article);
   }
 
   return results;
