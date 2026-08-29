@@ -1,20 +1,21 @@
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getDigestSchema } from "@/zod/api";
+import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
-  const body = await req.json();
+export async function GET(_req: NextRequest) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  const { success, data } = getDigestSchema.safeParse(body);
-
-  if (!success) {
+  if (!session) {
     return NextResponse.json({ error: "userId not provided" }, { status: 400 });
   }
 
   try {
     const digests = await prisma.digest.findMany({
       where: {
-        userId: data.userId,
+        userId: session.user.id,
       },
     });
 
