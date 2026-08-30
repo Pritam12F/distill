@@ -10,13 +10,15 @@ export type ArticleWithTopic = {
 
 export async function removeDuplicates(
   articles: ArticleType[],
-  userId: string,
+  userId?: string,
 ) {
-  const seenArticlesFetched = await prisma.seenArticle.findMany({
-    where: {
-      userId,
-    },
-  });
+  const seenArticlesFetched = userId
+    ? await prisma.seenArticle.findMany({
+        where: {
+          userId,
+        },
+      })
+    : [];
 
   // Articles the user has already seen in a previous run — tracked per-user,
   // independent of topic.

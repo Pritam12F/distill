@@ -1,15 +1,12 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { removeDuplicates } from "./deduplicate";
 import { filterArticles } from "./filter";
 import { synthesiseDigest } from "./digest-generator";
 import { addDigestsToRepo } from "./digest-repository";
 import { prisma } from "@/lib/prisma";
 import { getArticles } from "./scrapers";
-import { JsonValue } from "@prisma/client/runtime/client";
 import { promiseResolver } from "@/utils/resolver";
 
-type PipelineOutputType = {
+type PipelineMessageType = {
   success: boolean;
   message: string;
 };
@@ -30,43 +27,43 @@ type DigestRepoType = {
 };
 
 export type TopicsType = {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  userId: string;
+  id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  userId?: string;
   name: string;
-  sources: JsonValue;
+  sources?: string[];
 };
 
-export async function pipeline(): Promise<
-  PipelineOutputType | (PipelineOutputType & DigestRepoType)
-> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
+type PiplelineFinalOutput =
+  | PipelineMessageType
+  | (PipelineMessageType & DigestRepoType)[];
+
+export async function pipeline() {
+  const users = await prisma.user.findMany({
+    select: { id: true, topics: true },
   });
 
-  if (!session) {
-    return {
-      success: false,
-      message: "User is not authenticated",
-    };
-  }
+  const allUserDigests = await Promise.allSettled(
+    users.map(async (u) => await core(u.topics, u.id)),
+  );
 
-  const topics: TopicsType[] = await prisma.topic.findMany({
-    where: { userId: session.user.id },
+  allUserDigests.forEach((d) => {
+    if (d.status === "rejected") {
+      console.error(d.reason);
+    }
   });
 
-  if (!topics.length) {
-    return {
-      success: false,
-      message: "User has not selected any topics",
-    };
-  }
+  const allUserDigestsResolved = promiseResolver(allUserDigests);
 
+  return allUserDigestsResolved as PiplelineFinalOutput;
+}
+
+async function core(topics: TopicsType[], userId: string) {
   try {
     const articles = await getArticles(topics);
 
-    const deduplicated = await removeDuplicates(articles, session.user.id);
+    const deduplicated = await removeDuplicates(articles, userId);
 
     const topArticles = await filterArticles(deduplicated);
 
@@ -123,7 +120,7 @@ export async function pipeline(): Promise<
       };
     }
 
-    const digestRepo = await addDigestsToRepo(session.user.id, resolvedDigests);
+    const digestRepo = await addDigestsToRepo(userId, resolvedDigests);
 
     if (!digestRepo.digestCount) {
       return {
@@ -141,7 +138,7 @@ export async function pipeline(): Promise<
     const message =
       e instanceof Error ? e.message : "Unknown pipeline error occured";
 
-    console.log(message);
+    console.error(message);
 
     return {
       success: false,
