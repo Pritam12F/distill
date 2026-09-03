@@ -1,51 +1,34 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { reactionSchema } from "@/zod/api";
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(
-  req: Request,
-  { params }: { params: { id: string } },
-) {
+export async function GET(_req: NextRequest, { params }: { params: { digestId: string }}) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
+  
+  if((!params || !params.digestId) && !session){
 
-  if (!session) {
-    return NextResponse.json({ error: "User not authorized" }, { status: 400 });
+    return NextResponse.json({
+      error: "No digestId or userId provided/authorized"
+    });
   }
 
-  if (!params || !params.id) {
-    return NextResponse.json(
-      { error: "No digestId provided" },
-      { status: 403 },
-    );
-  }
-
-  const { success, data } = reactionSchema.safeParse(await req.json());
-
-  if (!success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-  const digestId = params.id;
-  const reaction = data.reaction;
-
-  try {
-    return await prisma.digestArticle.update({
+  try{
+    const allDigests = await prisma.digestArticle.findMany({
       where: {
-        id: digestId,
-      },
-      data: {
-        reaction,
+        id: params.digestId,
+        userId: session?.user.id,
       },
     });
-  } catch (e) {
-    console.error(e);
 
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Unknown error" },
-      { status: 500 },
-    );
+    return allDigests;
+  } catch (err) {
+    console.error(err);
+
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : "Unknown error trying to fetch articles",
+    });
   }
 }

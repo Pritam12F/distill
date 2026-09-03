@@ -1,14 +1,16 @@
 import "dotenv/config";
-import { openai } from "@ai-sdk/openai";
 import { RELEVANCY_SYSTEM_PROMPT } from "@/constants/prompts";
 import { buildRelevancyUserPrompt } from "@/lib/prompt-builder";
 import { ArticleWithTopic } from "./deduplicate";
 import { z } from "zod";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
+import { customOpenAI } from "@/lib/custom-openai";
 
 const RatingSchema = z.object({
-  id: z.string().min(1, "Id should not be empty"),
-  score: z.number(),
+  ratings: z.array(z.object({
+    id: z.string().min(1, "Id should not be empty"),
+    score: z.number(),
+ }))
 });
 
 const RatingGenerationSchema = z.array(RatingSchema);
@@ -18,7 +20,7 @@ export type RatingGenerationType = z.infer<typeof RatingGenerationSchema>;
 
 export const rateRelevancy = async (
   groups: ArticleWithTopic[],
-): Promise<RatingGenerationType> => {
+): Promise<{ id: string; score: number }[]> => {
   const isDevMode = process.env.DEV_MODE === "true";
 
   if (isDevMode) {
@@ -48,15 +50,16 @@ export const rateRelevancy = async (
   const userPrompt = buildRelevancyUserPrompt(groups);
 
   try {
-    const { object } = await generateObject({
-      output: "array",
-      model: openai("gpt-5-mini"),
+    const { output } = await generateText({
+      model: customOpenAI("gpt-5-nano"),
       system: RELEVANCY_SYSTEM_PROMPT,
       prompt: userPrompt,
-      schema: RatingSchema,
+      output: Output.object({
+        schema: RatingSchema,
+      })
     });
 
-    return object;
+    return output.ratings;
   } catch (e) {
     console.log(e instanceof Error ? e.message : "Error calling openAI");
     throw new Error("Error calling openAI");

@@ -5,6 +5,12 @@ import { addDigestsToRepo } from "./digest-repository";
 import { prisma } from "@/lib/prisma";
 import { getArticles } from "./scrapers";
 import { promiseResolver } from "@/utils/resolver";
+import { sendDailyEmail } from "./email";
+import { User } from "@prisma/client";
+import { buildTitlePrompt } from "@/lib/prompt-builder";
+import { generateText, Output } from "ai";
+import { customOpenAI } from "@/lib/custom-openai";
+import { titleSummarySchema } from "@/zod/api";
 
 type PipelineMessageType = {
   success: boolean;
@@ -45,7 +51,7 @@ export async function pipeline() {
   });
 
   const allUserDigests = await Promise.allSettled(
-    users.map(async (u) => await core(u.topics, u.id)),
+    users.map(async (u) => await core(u.topics, u)),
   );
 
   allUserDigests.forEach((d) => {
@@ -59,11 +65,11 @@ export async function pipeline() {
   return allUserDigestsResolved as PiplelineFinalOutput;
 }
 
-async function core(topics: TopicsType[], userId: string) {
+async function core(topics: TopicsType[], user: Partial<User>) {
   try {
     const articles = await getArticles(topics);
 
-    const deduplicated = await removeDuplicates(articles, userId);
+    const deduplicated = await removeDuplicates(articles, user.id);
 
     const topArticles = await filterArticles(deduplicated);
 
@@ -89,7 +95,6 @@ async function core(topics: TopicsType[], userId: string) {
           );
 
           return {
-            topic: a.topic,
             topicId: topicIdByName.get(a.topic)!,
             ...generated,
             articles: generated.articles.map((art) => ({
@@ -108,6 +113,9 @@ async function core(topics: TopicsType[], userId: string) {
           d.reason,
         );
       }
+      else if(d.status==="fulfilled"){
+        console.log(`Synthesis succeeded for topic "${topArticles[i].topic}" ✅`)
+      }
     });
 
     const resolvedDigests = promiseResolver(digests);
@@ -120,9 +128,29 @@ async function core(topics: TopicsType[], userId: string) {
       };
     }
 
-    const digestRepo = await addDigestsToRepo(userId, resolvedDigests);
+    const digestRepo = await addDigestsToRepo(user.id!, resolvedDigests);
+    const userPrompt = buildTitlePrompt(digestRepo.digests);
+    const structured = digestRepo.digests.map((d)=>({ topic: d.topic, topicId: d.topicId, headline: d.headline, consensus: d.consensus, signal: d.signal, articles: d.articles, conflict: d.conflict }));
 
-    if (!digestRepo.digestCount) {
+    const { output } = await generateText({
+      model: customOpenAI("gpt-5-nano"),
+      system: userPrompt,
+      prompt: buildTitlePrompt(digestRepo.digests),
+      output: Output.object({
+        schema: titleSummarySchema,
+      })
+    });
+
+    try{
+      await sendDailyEmail({ userName: user.name!, emailTitle: output.name, digests: structured, unsubscribeUrl: "", baseUrl: 'localhost:3000', date: "", topic: '' });
+
+      console.log("Email sent successfully");
+
+    } catch(err) {
+      console.error("Error sending email");
+    }
+
+    if(!digestRepo.digestCount) {
       return {
         success: false,
         message: "Failed to save any digests to the database.",

@@ -1,8 +1,18 @@
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateTopicSchema } from "@/zod/api";
+import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
+  const session = await auth.api.getSession({
+      headers: await headers(),
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "User not authorized" }, { status: 400 });
+  }
+
   const body = await req.json();
 
   const { success, data } = updateTopicSchema.safeParse(body.data);
@@ -15,6 +25,7 @@ export async function POST(req: NextRequest) {
     await prisma.topic.update({
       where: {
         id: data.topicId,
+        userId: session.user.id,
       },
       data: {
         name: data.name,

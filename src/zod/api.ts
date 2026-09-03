@@ -29,6 +29,10 @@ export const getDigestSchema = z.object({
   userId: z.string().min(1, "User Id is needed").max(100),
 });
 
+export const titleSummarySchema = z.object({
+   name: z.string().min(5, {message: "Too short of a title"}),
+});
+
 export type TopicInput = z.infer<typeof topicSchema>;
 export type UpdateTopicInput = z.infer<typeof updateTopicSchema>;
 export type GetTopicInput = z.infer<typeof getTopicSchema>;

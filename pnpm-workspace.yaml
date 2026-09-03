@@ -1,2 +1,8 @@
-ignoredBuiltDependencies:
-  - puppeteer
+allowBuilds:
+  '@prisma/engines': false
+  bcrypt: false
+  esbuild: false
+  prisma: false
+  puppeteer: false
+  sharp: false
+  unrs-resolver: false

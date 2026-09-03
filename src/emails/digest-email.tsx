@@ -14,11 +14,11 @@ export type Article = {
   id: string;
   title: string;
   url: string;
-  oneLine: string;
-  publishedAt: string | Date | null;
+  oneLine?: string;
+  publishedAt?: string | Date | null;
 };
 
-export type Digest = {
+type Digest = {
   topic: string;
   topicId: string;
   headline: string;
@@ -28,7 +28,7 @@ export type Digest = {
   articles: Article[];
 };
 
-export type DigestEmailProps = {
+export type EmailProps = {
   userName: string;
   date: string;
   emailTitle: string;
@@ -37,22 +37,19 @@ export type DigestEmailProps = {
   unsubscribeUrl: string;
 };
 
-const topicColors = [
-  { background: "#eee8ff", color: "#6046b8" },
-  { background: "#e5f5ed", color: "#26734d" },
-  { background: "#fff2d7", color: "#94651c" },
-  { background: "#ffe9e3", color: "#a44d38" },
-  { background: "#e4f0fb", color: "#32658f" },
+const chipColors = [
+  { backgroundColor: "#eee8ff", color: "#6046b8" },
+  { backgroundColor: "#e5f5ed", color: "#26734d" },
+  { backgroundColor: "#fff2d7", color: "#94651c" },
+  { backgroundColor: "#ffe9e3", color: "#a44d38" },
+  { backgroundColor: "#e4f0fb", color: "#32658f" },
 ];
 
-function formatPublishedAt(value: string | Date | null) {
+function formatDate(value: string | Date | null) {
   if (!value) return null;
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-  }).format(date);
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(d);
 }
 
 export function DigestEmail({
@@ -62,111 +59,90 @@ export function DigestEmail({
   digests,
   baseUrl,
   unsubscribeUrl,
-}: DigestEmailProps) {
-  const preview = `${emailTitle} — ${digests.length} topic${digests.length === 1 ? "" : "s"} distilled for you.`;
+}: EmailProps) {
+  const plural = digests.length === 1 ? "" : "s";
 
   return (
     <Html>
       <Head />
-      <Preview>{preview}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.header}>
-            <Text style={styles.wordmark}>DISTILL</Text>
-            <Text style={styles.eyebrow}>YOUR DAILY BRIEFING</Text>
-            <Text style={styles.title}>{emailTitle}</Text>
-            <Text style={styles.meta}>
-              {date} <span style={styles.metaDot}>·</span> {digests.length}{" "}
-              topic{digests.length === 1 ? "" : "s"}
+      <Preview>{`${emailTitle} — ${digests.length} topic${plural} distilled for you.`}</Preview>
+      <Body style={s.body}>
+        <Container style={s.container}>
+          <Section style={s.header}>
+            <Text style={s.wordmark}>DISTILL</Text>
+            <Text style={s.eyebrow}>YOUR DAILY BRIEFING</Text>
+            <Text style={s.title}>{emailTitle}</Text>
+            <Text style={s.meta}>
+              {date} · {digests.length} topic{plural}
             </Text>
-            <Text style={styles.greeting}>Good morning, {userName}.</Text>
+            <Text style={s.greeting}>Good morning, {userName}.</Text>
           </Section>
 
           {digests.length === 0 ? (
-            <Section style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>A quiet day in the news.</Text>
-              <Text style={styles.paragraph}>
-                There are no topic digests ready yet. Check back soon for your
-                next briefing.
+            <Section style={s.empty}>
+              <Text style={s.emptyTitle}>A quiet day in the news.</Text>
+              <Text style={s.paragraph}>
+                No digests are ready yet. Check back soon for your next briefing.
               </Text>
             </Section>
           ) : (
-            digests.map((digest, index) => {
-              const topicColor = topicColors[index % topicColors.length];
-              return (
-                <Section key={digest.topicId} style={styles.digest}>
-                  <Text
-                    style={{
-                      ...styles.topicChip,
-                      backgroundColor: topicColor.background,
-                      color: topicColor.color,
-                    }}
-                  >
-                    {digest.topic}
-                  </Text>
-                  <Text style={styles.headline}>{digest.headline}</Text>
-                  <Text style={styles.paragraph}>{digest.consensus}</Text>
+            digests.map((digest, i) => (
+              <Section key={digest.topicId} style={s.digest}>
+                <Text style={{ ...s.chip, ...chipColors[i % chipColors.length] }}>
+                  {digest.topic}
+                </Text>
 
-                  {digest.conflict ? (
-                    <Section style={styles.conflictPanel}>
-                      <Text style={styles.panelLabel}>
-                        WHERE IT&apos;S UNCLEAR
-                      </Text>
-                      <Text style={styles.panelText}>{digest.conflict}</Text>
-                    </Section>
-                  ) : null}
+                <Text style={s.headline}>{digest.headline}</Text>
+                <Text style={s.paragraph}>{digest.consensus}</Text>
 
-                  <Section style={styles.signalPanel}>
-                    <Text style={styles.signalLabel}>THE SIGNAL</Text>
-                    <Text style={styles.panelText}>{digest.signal}</Text>
+                {digest.conflict ? (
+                  <Section style={s.conflictPanel}>
+                    <Text style={s.conflictLabel}>WHERE IT&apos;S UNCLEAR</Text>
+                    <Text style={s.panelText}>{digest.conflict}</Text>
                   </Section>
+                ) : null}
 
-                  <Text style={styles.sourcesLabel}>SOURCES</Text>
-                  {digest.articles.map((article) => {
-                    const published = formatPublishedAt(article.publishedAt);
-                    return (
-                      <Section key={article.id} style={styles.article}>
-                        <Link href={article.url} style={styles.articleTitle}>
-                          {article.title}
-                        </Link>
-                        <Text style={styles.articleSummary}>
-                          {article.oneLine}
-                          {published ? (
-                            <span style={styles.published}> · {published}</span>
-                          ) : null}
-                        </Text>
-                      </Section>
-                    );
-                  })}
-
-                  <Link
-                    href={`${baseUrl}/digest/${digest.topicId}`}
-                    style={styles.readLink}
-                  >
-                    Read full digest <span aria-hidden="true">→</span>
-                  </Link>
-                  {index < digests.length - 1 ? (
-                    <Hr style={styles.divider} />
-                  ) : null}
+                <Section style={s.signalPanel}>
+                  <Text style={s.signalLabel}>THE SIGNAL</Text>
+                  <Text style={s.panelText}>{digest.signal}</Text>
                 </Section>
-              );
-            })
+
+                <Text style={s.sourcesLabel}>SOURCES</Text>
+                {digest.articles.map((article) => {
+                  const published = formatDate(article.publishedAt?? new Date());
+                  return (
+                    <Section key={article.id} style={s.article}>
+                      <Link href={article.url} style={s.articleTitle}>
+                        {article.title}
+                      </Link>
+                      <Text style={s.articleSummary}>
+                        {article.oneLine}
+                        {published ? <span style={s.published}> · {published}</span> : null}
+                      </Text>
+                    </Section>
+                  );
+                })}
+
+                <Link href={`${baseUrl}/digest/${digest.topicId}`} style={s.readLink}>
+                  Read full digest →
+                </Link>
+
+                {i < digests.length - 1 ? <Hr style={s.divider} /> : null}
+              </Section>
+            ))
           )}
 
-          <Section style={styles.footer}>
-            <Text style={styles.footerLinks}>
-              <Link
-                href={`${baseUrl}/settings/topics`}
-                style={styles.footerLink}
-              >
+          <Section style={s.footer}>
+            <Text style={s.footerLinks}>
+              <Link href={`${baseUrl}/settings`} style={s.footerLink}>
                 Manage topics
               </Link>
-              <span style={styles.footerDot}> · </span>
-              <Link href={unsubscribeUrl} style={styles.footerLink}>
+              {" · "}
+              <Link href={unsubscribeUrl} style={s.footerLink}>
                 Unsubscribe
               </Link>
             </Text>
-            <Text style={styles.copyright}>
+            <Text style={s.copyright}>
               © {new Date().getFullYear()} Distill. News, clarified.
             </Text>
           </Section>
@@ -178,7 +154,7 @@ export function DigestEmail({
 
 DigestEmail.PreviewProps = {
   userName: "Maya",
-  date: "Tuesday, September 16, 2025",
+  date: "Tuesday, 16 September 2025",
   emailTitle: "The morning, distilled.",
   baseUrl: "https://distill.news",
   unsubscribeUrl: "https://distill.news/unsubscribe",
@@ -238,52 +214,15 @@ DigestEmail.PreviewProps = {
           id: "5",
           title: "Storage gets more practical",
           url: "https://example.com/storage",
-          oneLine:
-            "New projects are changing how renewables reach the evening peak.",
+          oneLine: "New projects are changing how renewables reach the evening peak.",
           publishedAt: "2025-09-14",
         },
       ],
     },
-    {
-      topic: "Markets",
-      topicId: "markets",
-      headline: "Investors are pricing patience back into the economy.",
-      consensus:
-        "The mood has shifted from chasing every growth story to rewarding durable cash flow and clear execution.",
-      conflict:
-        "A resilient consumer is offsetting softer manufacturing data, leaving the path for rates unusually debated.",
-      signal:
-        "Quality is regaining its premium. Companies with pricing power and a real operating advantage are separating from the pack.",
-      articles: [
-        {
-          id: "6",
-          title: "The return of fundamentals",
-          url: "https://example.com/fundamentals",
-          oneLine: "Markets are asking harder questions of high-growth names.",
-          publishedAt: "2025-09-16",
-        },
-        {
-          id: "7",
-          title: "Why rates still matter",
-          url: "https://example.com/rates",
-          oneLine:
-            "The next move depends on a consumer that is cooling, not cracking.",
-          publishedAt: "2025-09-15",
-        },
-        {
-          id: "8",
-          title: "A calmer kind of volatility",
-          url: "https://example.com/volatility",
-          oneLine:
-            "Portfolio managers are preparing for a wider range of outcomes.",
-          publishedAt: "2025-09-13",
-        },
-      ],
-    },
   ],
-} satisfies DigestEmailProps;
+} satisfies EmailProps;
 
-const styles = {
+const s = {
   body: {
     backgroundColor: "#f6f7f9",
     color: "#20242b",
@@ -299,7 +238,6 @@ const styles = {
   },
   header: { padding: "42px 0 28px", borderBottom: "1px solid #e5e7eb" },
   wordmark: {
-    color: "#20242b",
     fontSize: "13px",
     fontWeight: "700",
     letterSpacing: "3px",
@@ -313,7 +251,6 @@ const styles = {
     margin: "0 0 10px",
   },
   title: {
-    color: "#20242b",
     fontFamily: "Georgia, Times New Roman, serif",
     fontSize: "34px",
     fontWeight: "400",
@@ -322,15 +259,9 @@ const styles = {
     margin: "0 0 13px",
   },
   meta: { color: "#68717d", fontSize: "13px", margin: 0 },
-  metaDot: { color: "#c0c5ca", padding: "0 6px" },
-  greeting: {
-    color: "#68717d",
-    fontSize: "14px",
-    lineHeight: "1.5",
-    margin: "25px 0 0",
-  },
+  greeting: { color: "#68717d", fontSize: "14px", margin: "25px 0 0" },
   digest: { padding: "34px 0 0" },
-  topicChip: {
+  chip: {
     borderRadius: "4px",
     display: "inline-block",
     fontSize: "11px",
@@ -340,19 +271,13 @@ const styles = {
     padding: "6px 9px",
   },
   headline: {
-    color: "#20242b",
     fontFamily: "Georgia, Times New Roman, serif",
     fontSize: "24px",
     fontWeight: "400",
     lineHeight: "1.22",
     margin: "0 0 14px",
   },
-  paragraph: {
-    color: "#454d57",
-    fontSize: "15px",
-    lineHeight: "1.65",
-    margin: "0",
-  },
+  paragraph: { color: "#454d57", fontSize: "15px", lineHeight: "1.65", margin: 0 },
   conflictPanel: {
     backgroundColor: "#fff7e8",
     borderRadius: "5px",
@@ -365,7 +290,7 @@ const styles = {
     margin: "22px 0 12px",
     padding: "15px 17px",
   },
-  panelLabel: {
+  conflictLabel: {
     color: "#a47320",
     fontSize: "10px",
     fontWeight: "700",
@@ -379,12 +304,7 @@ const styles = {
     letterSpacing: "1.3px",
     margin: "0 0 7px",
   },
-  panelText: {
-    color: "#4b463b",
-    fontSize: "14px",
-    lineHeight: "1.55",
-    margin: 0,
-  },
+  panelText: { color: "#4b463b", fontSize: "14px", lineHeight: "1.55", margin: 0 },
   sourcesLabel: {
     color: "#89919b",
     fontSize: "10px",
@@ -405,12 +325,7 @@ const styles = {
     lineHeight: "1.4",
     textDecoration: "none",
   },
-  articleSummary: {
-    color: "#77808b",
-    fontSize: "13px",
-    lineHeight: "1.5",
-    margin: "4px 0 0",
-  },
+  articleSummary: { color: "#77808b", fontSize: "13px", lineHeight: "1.5", margin: "4px 0 0" },
   published: { color: "#a5abb2" },
   readLink: {
     color: "#2f5f91",
@@ -421,9 +336,8 @@ const styles = {
     textDecoration: "none",
   },
   divider: { borderColor: "#e5e7eb", margin: "36px 0 0" },
-  emptyState: { padding: "48px 0 62px" },
+  empty: { padding: "48px 0 62px" },
   emptyTitle: {
-    color: "#20242b",
     fontFamily: "Georgia, Times New Roman, serif",
     fontSize: "22px",
     margin: "0 0 10px",
@@ -435,7 +349,6 @@ const styles = {
   },
   footerLinks: { fontSize: "12px", margin: "0 0 12px" },
   footerLink: { color: "#68717d", textDecoration: "underline" },
-  footerDot: { color: "#b3b8bd" },
   copyright: { color: "#a0a6ad", fontSize: "11px", margin: 0 },
 };
 

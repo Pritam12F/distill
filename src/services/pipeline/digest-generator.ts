@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 import { SYNTHESIS_SYSTEM_PROMPT } from "@/constants/prompts";
 import { buildSynthesisUserPrompt } from "@/lib/prompt-builder";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
+import { customOpenAI } from "@/lib/custom-openai";
 
 export const synthesisSchema = z.object({
   headline: z.string().max(120),
+  topic: z.string().min(1),
   consensus: z.string(),
   conflict: z.string().nullable(),
   signal: z.string(),
@@ -13,8 +14,15 @@ export const synthesisSchema = z.object({
     z.object({
       id: z.string(),
       title: z.string(),
-      url: z.string().url(),
-      oneLine: z.string().max(100),
+      url: z.string().refine((val) => {
+        try{
+          new URL(val);
+          return true;
+        } catch {
+          return false;
+        }
+      }),
+      oneLine: z.string(),
     }),
   ),
 });
@@ -23,12 +31,14 @@ export async function synthesiseDigest(
   topic: string,
   articles: { id: string; title: string; url: string; content: string }[],
 ) {
-  const { object } = await generateObject({
-    model: openai("gpt-5-mini"),
+  const { output } = await generateText({
+    model: customOpenAI("gpt-5-nano"),
     system: SYNTHESIS_SYSTEM_PROMPT,
     prompt: buildSynthesisUserPrompt(topic, articles),
-    schema: synthesisSchema,
+    output: Output.object({
+      schema: synthesisSchema,
+    })
   });
 
-  return object;
+  return output;
 }
