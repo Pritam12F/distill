@@ -48,7 +48,7 @@ model Digest {
   id        String          @id @default(uuid())
   headline  String
   consensus String
-  conflict  Boolean
+  conflict  String?
   signal    String
   articles  DigestArticle[]
   userId    String

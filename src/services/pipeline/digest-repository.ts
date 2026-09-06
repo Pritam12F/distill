@@ -43,7 +43,7 @@ export async function addDigestsToRepo(
       publishedAt: Date | string | null;
     })[];
   })[],
-){
+) {
   // Each digest and its articles are written in their own transaction, so a
   // failure while writing one digest never leaves it half-persisted, and the
   // other digests are unaffected.
@@ -59,12 +59,22 @@ export async function addDigestsToRepo(
             userId,
             topicId: d.topicId,
           },
-          select: { id: true, headline: true, topicId: true, createdAt: true, topic: true, consensus: true, conflict: true, signal: true, articles: {
-            select: {
-              oneLine: true,
-              publishedAt: true,
-            }
-          }},
+          select: {
+            id: true,
+            headline: true,
+            topicId: true,
+            createdAt: true,
+            topic: true,
+            consensus: true,
+            conflict: true,
+            signal: true,
+            articles: {
+              select: {
+                oneLine: true,
+                publishedAt: true,
+              },
+            },
+          },
         });
 
         const articles = await tx.digestArticle.createManyAndReturn({

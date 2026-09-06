@@ -28,7 +28,7 @@ export function buildRelevancyUserPrompt(groups: ArticleWithTopic[]): string {
 Articles:
 ${articles
   .map(
-    (a) => `[${a.id}]
+    (a, i) => `[S${i + 1}]
 Title: ${a.title}
 Content: ${a.article.slice(0, 300)}`,
   )
@@ -41,14 +41,15 @@ Content: ${a.article.slice(0, 300)}`,
 Rate each article's relevance to its own topic as instructed.`;
 }
 
-export function buildTitlePrompt (digests: ({
+export function buildTitlePrompt(
+  digests: {
     topic: string;
     headline: string;
-})[]) {
-
+  }[],
+) {
   return `Write one email subject line summarizing today's briefing across these topics.
 
-${digests.map(d => `${d.topic}: ${d.headline}`).join('\n')}
+${digests.map((d) => `${d.topic}: ${d.headline}`).join("\n")}
 
-Rules: under 60 characters, specific not generic, no "Your daily digest" phrasing. If one story clearly dominates, lead with it. Otherwise name the 2 biggest themes. Return only the subject line.`
+Rules: under 60 characters, specific not generic, no "Your daily digest" phrasing. If one story clearly dominates, lead with it. Otherwise name the 2 biggest themes. Return only the subject line.`;
 }

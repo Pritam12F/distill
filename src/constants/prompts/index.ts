@@ -54,7 +54,7 @@ signal
  
 articles
 - One entry per article you were given, using the exact id, title, and url provided in the input.
-- oneLine: a single short sentence (max 100 characters) explaining why THIS specific article matters within the broader story. Not a summary of the article — a reason to read it.
+- oneLine: a single short sentence (max 200 characters) explaining why THIS specific article matters within the broader story. Not a summary of the article — a reason to read it.
  
 RULES
 - Never fabricate information not present in the article content.

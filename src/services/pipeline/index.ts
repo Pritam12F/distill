@@ -112,9 +112,10 @@ async function core(topics: TopicsType[], user: Partial<User>) {
           `Synthesis failed for topic "${topArticles[i].topic}":`,
           d.reason,
         );
-      }
-      else if(d.status==="fulfilled"){
-        console.log(`Synthesis succeeded for topic "${topArticles[i].topic}" ✅`)
+      } else if (d.status === "fulfilled") {
+        console.log(
+          `Synthesis succeeded for topic "${topArticles[i].topic}" ✅`,
+        );
       }
     });
 
@@ -130,7 +131,16 @@ async function core(topics: TopicsType[], user: Partial<User>) {
 
     const digestRepo = await addDigestsToRepo(user.id!, resolvedDigests);
     const userPrompt = buildTitlePrompt(digestRepo.digests);
-    const structured = digestRepo.digests.map((d)=>({ topic: d.topic, topicId: d.topicId, headline: d.headline, consensus: d.consensus, signal: d.signal, articles: d.articles, conflict: d.conflict }));
+
+    const structured = digestRepo.digests.map((d) => ({
+      topic: d.topic,
+      topicId: d.topicId,
+      headline: d.headline,
+      consensus: d.consensus,
+      signal: d.signal,
+      articles: d.articles,
+      conflict: d.conflict,
+    }));
 
     const { output } = await generateText({
       model: customOpenAI("gpt-5-nano"),
@@ -138,19 +148,26 @@ async function core(topics: TopicsType[], user: Partial<User>) {
       prompt: buildTitlePrompt(digestRepo.digests),
       output: Output.object({
         schema: titleSummarySchema,
-      })
+      }),
     });
 
-    try{
-      await sendDailyEmail({ userName: user.name!, emailTitle: output.name, digests: structured, unsubscribeUrl: "", baseUrl: 'localhost:3000', date: "", topic: '' });
+    try {
+      await sendDailyEmail({
+        userName: user.name!,
+        emailTitle: output.name,
+        digests: structured,
+        unsubscribeUrl: "",
+        baseUrl: "localhost:3000",
+        date: "",
+        topic: "",
+      });
 
       console.log("Email sent successfully");
-
-    } catch(err) {
+    } catch (err) {
       console.error("Error sending email");
     }
 
-    if(!digestRepo.digestCount) {
+    if (!digestRepo.digestCount) {
       return {
         success: false,
         message: "Failed to save any digests to the database.",
