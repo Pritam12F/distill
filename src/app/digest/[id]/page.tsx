@@ -1,11 +1,7 @@
+import ConsensusAndConflict from "@/components/consensus-conflict";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { Share2, ThumbsDown, ThumbsUp } from "lucide-react";
-
-/**
- * Topic chip tints, warm variations on the gold accent.
- * Pick with `accentIndex % topicColors.length` so a topic keeps its colour day to day.
- */
 
 export type DigestPageProps = Prisma.DigestGetPayload<{
   include: {
@@ -61,47 +57,6 @@ const sources = [
   },
 ];
 
-/** Inline source marker. In production these are parsed out of the digest text. */
-function citeGen({ id, url }: { id: string; url: string }) {
-  return `<a
-      id=${id}
-      href=${url}
-      className="ml-0.5 align-super text-[11px] text-[#755815] no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:text-[#D9A441] dark:focus-visible:outline-[#D9A441]"
-    >
-      ${id}
-    </a>`;
-}
-
-function parseSources(
-  consensus: string,
-  articles: { sourceId: string; url: string }[],
-) {
-  let result = "";
-  let currentIdx = 0;
-  const matches = consensus.matchAll(/\[S(\d+)\]/g);
-
-  for (const match of matches) {
-    const index = match.index;
-
-    const source = articles.find((art) => art.sourceId === match[0])!;
-    const element = citeGen({ id: source.sourceId, url: source.url });
-
-    const replaced = consensus.slice(currentIdx, index).concat(element);
-
-    result += replaced;
-    currentIdx = index + match.length;
-  }
-
-  if (consensus[currentIdx]) {
-    result += consensus.slice(currentIdx + 1, consensus.length);
-  }
-
-  const domParser = new DOMParser();
-  const doc = domParser.parseFromString(result, "text/html");
-
-  return doc.body.firstChild;
-}
-
 export default async function DigestPage({
   params,
 }: {
@@ -145,15 +100,19 @@ export default async function DigestPage({
         </p>
       </header>
 
+      <ConsensusAndConflict
+        consensus={digestDetails.consensus}
+        conflict={digestDetails.conflict}
+        articles={digestDetails.articles}
+      />
+
       {/* Signal */}
       <section className="mt-4 rounded-2xl bg-[#E8F0E6] px-6 py-6 dark:bg-[#1A2419]">
         <h2 className="text-[11px] uppercase tracking-[0.16em] text-[#4A6B3D] dark:text-[#9FC48F]">
           The signal
         </h2>
         <p className="mt-3 text-[17px] leading-8 text-[#2F3B29] dark:text-[#CBDCC2]">
-          If the multi-step gains hold outside benchmarks, autonomous coding
-          agents become viable six to twelve months earlier than most roadmaps
-          assume.
+          {digestDetails.signal}
         </p>
       </section>
 
@@ -164,7 +123,7 @@ export default async function DigestPage({
         </h2>
 
         <ul className="mt-5">
-          {sources.map((source, i) => (
+          {digestDetails.articles.map((source, i) => (
             <li
               key={source.sourceId}
               id={`source-${source.sourceId}`}
@@ -187,10 +146,10 @@ export default async function DigestPage({
                 </a>
                 <p className="mt-1.5 text-[13px] leading-6 text-[#6E645A] dark:text-[#A69A8B]">
                   {source.oneLine}
-                  {source.date && (
+                  {source.publishedAt && (
                     <span className="text-[#A69A8B] dark:text-[#6E645A]">
                       {" "}
-                      — {source.date}
+                      — {source.publishedAt.toLocaleDateString()}
                     </span>
                   )}
                 </p>
