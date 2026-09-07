@@ -26,6 +26,8 @@ export function parseSources(
             <a
               key={i}
               href={`#source-${id}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="ml-0.5 align-super text-[11px] text-[#755815] no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:text-[#D9A441] dark:focus-visible:outline-[#D9A441]"
             >
               {id}

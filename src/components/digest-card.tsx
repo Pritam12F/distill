@@ -6,7 +6,7 @@ export type DigestCardProps = {
   topic: string;
   headline: string;
   sourceCount: number;
-  hasConflict: boolean;
+  hasConflict?: string | null;
   date: string; // "Jun 10" or "Today"
   isUnread?: boolean;
   accentIndex: number; // 0-4, picks the topic chip color

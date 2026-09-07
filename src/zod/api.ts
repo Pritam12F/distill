@@ -22,7 +22,7 @@ export const addTopicSchema = z.object({
 });
 
 export const reactionSchema = z.object({
-  reaction: z.enum(["LIKE", "DISLIKE"]),
+  reaction: z.enum(["LIKE", "DISLIKE"]).nullable(),
 });
 
 export const getDigestSchema = z.object({
@@ -30,7 +30,7 @@ export const getDigestSchema = z.object({
 });
 
 export const titleSummarySchema = z.object({
-   name: z.string().min(5, {message: "Too short of a title"}),
+  name: z.string().min(5, { message: "Too short of a title" }),
 });
 
 export type TopicInput = z.infer<typeof topicSchema>;

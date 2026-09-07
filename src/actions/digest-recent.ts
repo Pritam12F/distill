@@ -52,7 +52,7 @@ export async function getDigests(
       topic: m.topic.name,
       headline: m.headline,
       consensus: m.consensus,
-      hasConflict: m.conflict ?? false,
+      hasConflict: m.conflict,
       date: m.createdAt.toISOString().split("T")[0],
       isUnread: true,
       accentIndex: i,

@@ -1,7 +1,9 @@
 import ConsensusAndConflict from "@/components/consensus-conflict";
+import { ReactionsSection } from "@/components/reaction";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { Share2, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Share2 } from "lucide-react";
+import { notFound } from "next/navigation";
 
 export type DigestPageProps = Prisma.DigestGetPayload<{
   include: {
@@ -18,45 +20,6 @@ const topicColors = [
   "bg-[#E2E9EC] text-[#46626E] dark:bg-[#1A2226] dark:text-[#8FB3C0]", // dusty blue
 ];
 
-const accentIndex = 0;
-
-const sources = [
-  {
-    sourceId: "S1",
-    title: "Independent evaluation reproduces the coding benchmark gain",
-    url: "#",
-    oneLine:
-      "The clearest look at how the result was verified outside the lab.",
-    date: "Jun 10",
-    reaction: "LIKE",
-  },
-  {
-    sourceId: "S2",
-    title: "Training costs fell sharply this cycle, company says",
-    url: "#",
-    oneLine: "The claim the rest of the coverage is arguing about.",
-    date: "Jun 10",
-    reaction: null,
-  },
-  {
-    sourceId: "S3",
-    title:
-      "What the HumanEval numbers actually measure, and what they leave out",
-    url: "#",
-    oneLine: "Useful if you want to know how much the benchmark is worth.",
-    date: "Jun 9",
-    reaction: null,
-  },
-  {
-    sourceId: "S4",
-    title: "Enterprise buyers are already rewriting procurement timelines",
-    url: "#",
-    oneLine: "Where the benchmark result turns into budget decisions.",
-    date: null,
-    reaction: null,
-  },
-];
-
 export default async function DigestPage({
   params,
 }: {
@@ -69,14 +32,32 @@ export default async function DigestPage({
       id,
     },
     include: {
-      topic: true,
       articles: true,
+      topic: {
+        select: {
+          name: true,
+          user: {
+            select: {
+              topics: {
+                select: {
+                  id: true,
+                },
+              },
+            },
+          },
+          id: true,
+        },
+      },
     },
   });
 
   if (!digestDetails) {
-    return null;
+    return notFound();
   }
+
+  const topicIdx = digestDetails.topic.user.topics.findIndex(
+    (t) => t.id === digestDetails.topic.id,
+  );
 
   return (
     <main className="mx-auto max-w-2xl px-6 pb-24 pt-12 text-[#1A1714] dark:text-[#F3EDE3]">
@@ -84,7 +65,7 @@ export default async function DigestPage({
       <header>
         <span
           className={`inline-block rounded-full px-3 py-1 text-xs ${
-            topicColors[accentIndex % topicColors.length]
+            topicColors[topicIdx]
           }`}
         >
           {digestDetails.topic.name}
@@ -95,7 +76,11 @@ export default async function DigestPage({
         </h1>
 
         <p className="mt-5 text-sm text-[#6E645A] dark:text-[#A69A8B]">
-          {digestDetails.createdAt.toString().split(" ").slice(0, 4).join(" ")}{" "}
+          {digestDetails.createdAt.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
           — synthesised from {digestDetails.articles.length} sources
         </p>
       </header>
@@ -127,11 +112,7 @@ export default async function DigestPage({
             <li
               key={source.sourceId}
               id={`source-${source.sourceId}`}
-              className={`flex gap-4 py-5 ${
-                i < sources.length - 1
-                  ? "border-b border-[#DCD2C2] dark:border-[#332C24]"
-                  : ""
-              }`}
+              className={`flex gap-4 py-5 border-b border-[#DCD2C2] dark:border-[#332C24]`}
             >
               <span className="mt-0.5 shrink-0 text-xs text-[#A69A8B] dark:text-[#6E645A]">
                 {source.sourceId}
@@ -139,6 +120,8 @@ export default async function DigestPage({
 
               <div className="min-w-0 flex-1">
                 <a
+                  target="_blank"
+                  rel="noopener noreferrer"
                   href={source.url}
                   className="text-[15px] font-medium leading-6 text-[#1A1714] underline decoration-[#DCD2C2] underline-offset-4 hover:decoration-[#755815] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:text-[#F3EDE3] dark:decoration-[#332C24] dark:hover:decoration-[#D9A441] dark:focus-visible:outline-[#D9A441]"
                 >
@@ -155,28 +138,11 @@ export default async function DigestPage({
                 </p>
               </div>
 
-              <div className="flex shrink-0 items-start gap-1">
-                <button
-                  aria-label={`Mark ${source.sourceId} as useful`}
-                  aria-pressed={source.reaction === "LIKE"}
-                  className="rounded-full p-1.5 text-[#A69A8B] transition-colors hover:bg-[#F0E8DA] hover:text-[#755815] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:text-[#6E645A] dark:hover:bg-[#221D17] dark:hover:text-[#D9A441] dark:focus-visible:outline-[#D9A441]"
-                >
-                  <ThumbsUp
-                    className={`h-4 w-4 ${
-                      source.reaction === "LIKE"
-                        ? "fill-[#755815] text-[#755815] dark:fill-[#D9A441] dark:text-[#D9A441]"
-                        : ""
-                    }`}
-                  />
-                </button>
-                <button
-                  aria-label={`Mark ${source.sourceId} as not useful`}
-                  aria-pressed={source.reaction === "DISLIKE"}
-                  className="rounded-full p-1.5 text-[#A69A8B] transition-colors hover:bg-[#F0E8DA] hover:text-[#755815] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:text-[#6E645A] dark:hover:bg-[#221D17] dark:hover:text-[#D9A441] dark:focus-visible:outline-[#D9A441]"
-                >
-                  <ThumbsDown className="h-4 w-4" />
-                </button>
-              </div>
+              <ReactionsSection
+                sourceId={source.sourceId}
+                articleId={source.id}
+                reaction={source.reaction}
+              />
             </li>
           ))}
         </ul>

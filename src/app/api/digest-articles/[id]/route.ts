@@ -18,7 +18,7 @@ export async function PATCH(
 
   const { id } = await params;
 
-  if (!id || !id) {
+  if (!id) {
     return NextResponse.json(
       { error: "No digestId provided" },
       { status: 403 },
@@ -43,7 +43,6 @@ export async function PATCH(
         reaction,
       },
     });
-    
   } catch (e) {
     console.error(e);
 

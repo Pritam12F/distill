@@ -32,6 +32,9 @@ importers:
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@rtcoder/string-to-color':
+        specifier: ^1.1.0
+        version: 1.1.0
       ai:
         specifier: ^7.0.34
         version: 7.0.34(zod@4.4.3)
@@ -1542,6 +1545,9 @@ packages:
 
   '@react-email/ui@6.9.1':
     resolution: {integrity: sha512-zw7KvwMu3RU/fDC9TAkegg9/qNV9foJtd3QRoetdWVFe8aQC/NyXmWTrG9IrkzVLzn5otkkxu7e7B1QelcwdiQ==}
+
+  '@rtcoder/string-to-color@1.1.0':
+    resolution: {integrity: sha512-d1vp8Plfhb0Ol+hLs5MMCbOU61sPBzqLl46hVsD3sp1DwXtltifMtlu54RlO+927aRTELolXfVb0xc6MtAP1Gg==}
 
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
@@ -5299,6 +5305,8 @@ snapshots:
       - react
       - react-dom
       - sass
+
+  '@rtcoder/string-to-color@1.1.0': {}
 
   '@rtsao/scc@1.1.0': {}
 
