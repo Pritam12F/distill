@@ -7,10 +7,15 @@ export type DialogStatesStoreType = {
 export const DialogContext = createContext<
   | {
       state: DialogStatesStoreType;
-      stateChangeHandler: (value: DialogStatesStoreType) => void;
+      stateChangeHandler: ({ id, state }: DialogType) => void;
     }
   | undefined
 >(undefined);
+
+export type DialogType = {
+  id: string;
+  state?: boolean | null;
+};
 
 export const DialogContextProvider = ({
   children,
@@ -19,9 +24,21 @@ export const DialogContextProvider = ({
 }) => {
   const [dialogState, setDialogState] = useState<DialogStatesStoreType>({});
 
+  const handleStateChange = ({ id, state }: DialogType) => {
+    setDialogState((s) => {
+      if (!(Object.hasOwn(s, id) && s[id] === state)) {
+        const newState = { ...s, [id]: state } as DialogStatesStoreType;
+
+        return newState;
+      }
+
+      return s;
+    });
+  };
+
   return (
     <DialogContext.Provider
-      value={{ state: dialogState, stateChangeHandler: setDialogState }}
+      value={{ state: dialogState, stateChangeHandler: handleStateChange }}
     >
       {children}
     </DialogContext.Provider>
