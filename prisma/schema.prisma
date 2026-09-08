@@ -80,6 +80,7 @@ model SeenArticle {
   id      String   @id @default(uuid())
   urlHash String
   userId  String
+  title   String
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   seenAt  DateTime @default(now())
 

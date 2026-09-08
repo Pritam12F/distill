@@ -99,6 +99,7 @@ export async function addDigestsToRepo(
           data: articles.map((a) => ({
             userId,
             urlHash: hashUrl(a.url),
+            title: a.title,
           })),
           skipDuplicates: true,
         });

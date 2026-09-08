@@ -37,6 +37,8 @@ The two days that matter most are Thursday and Friday. Everything before them is
 - [ ] Hide reaction buttons when not owner
 - [ ] Swap share button for a "Get your own briefing" link to `/` when not owner
 
+- [ ] Write a seed file for prisma
+
 **Buffer (0.5h)** — something above will take longer than expected.
 
 ---
