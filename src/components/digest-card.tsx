@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Layers, Scale } from "lucide-react";
+import { topicColors } from "@/constants/constants";
 
 export type DigestCardProps = {
   id: string;
@@ -12,14 +13,6 @@ export type DigestCardProps = {
   accentIndex: number; // 0-4, picks the topic chip color
 };
 
-const CHIP_STYLES = [
-  "bg-[#EEEDFE] text-[#3C3489] dark:bg-[#2A2570] dark:text-[#C7C3F5]", // purple
-  "bg-[#E5F5ED] text-[#26734D] dark:bg-[#1B4530] dark:text-[#8FD4AE]", // green
-  "bg-[#FFF2D7] text-[#94651C] dark:bg-[#4A3312] dark:text-[#F0C878]", // amber
-  "bg-[#FFE9E3] text-[#A44D38] dark:bg-[#4A2A20] dark:text-[#F0B39E]", // coral
-  "bg-[#E4F0FB] text-[#32658F] dark:bg-[#1F3A52] dark:text-[#A8CDEE]", // blue
-];
-
 export function DigestCard({
   id,
   topic,
@@ -30,7 +23,7 @@ export function DigestCard({
   isUnread = false,
   accentIndex,
 }: DigestCardProps) {
-  const chipStyle = CHIP_STYLES[accentIndex % CHIP_STYLES.length];
+  const chipStyle = topicColors[accentIndex % topicColors.length];
 
   return (
     <Link

@@ -27,17 +27,17 @@ The two days that matter most are Thursday and Friday. Everything before them is
 
 **Sharing (1.5h)**
 
-- [ ] `ShareButton` client component — clipboard write, "Link copied" for 2s, `navigator.share` fallback
-- [ ] `generateMetadata` on the digest page — title from `headline`, description from `signal`, OG tags
-- [ ] Test the preview by pasting a link into Slack or WhatsApp
+- [x] `ShareButton` client component — clipboard write, "Link copied" for 2s, `navigator.share` fallback
+- [x] `generateMetadata` on the digest page — title from `headline`, description from `signal`, OG tags
+- [-] Test the preview by pasting a link into Slack or WhatsApp
 
 **isOwner (1h)**
 
-- [ ] Compare session user to `digest.userId`
-- [ ] Hide reaction buttons when not owner
-- [ ] Swap share button for a "Get your own briefing" link to `/` when not owner
+- [x] Compare session user to `digest.userId`
+- [x] Hide reaction buttons when not owner
+- [x] Swap share button for a "Get your own briefing" link to `/` when not owner
 
-- [ ] Write a seed file for prisma
+- [x] Write a seed file for prisma
 
 **Buffer (0.5h)** — something above will take longer than expected.
 

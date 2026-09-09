@@ -330,4 +330,7 @@ seedDb()
     console.error(e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => {
+    console.log("Database was seeded successfully!");
+    prisma.$disconnect();
+  });

@@ -1,9 +1,15 @@
 import ConsensusAndConflict from "@/components/consensus-conflict";
+import DigestShare from "@/components/digest-share";
 import { ReactionsSection } from "@/components/reaction";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
-import { Share2 } from "lucide-react";
+import { Digest, DigestArticle, Prisma, Topic, User } from "@prisma/client";
 import { notFound } from "next/navigation";
+import "dotenv/config";
+import { BASE_URL, topicColors } from "@/constants/constants";
+import type { Metadata, ResolvingMetadata } from "next";
+import { cache } from "react";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export type DigestPageProps = Prisma.DigestGetPayload<{
   include: {
@@ -12,25 +18,8 @@ export type DigestPageProps = Prisma.DigestGetPayload<{
   };
 }>;
 
-const topicColors = [
-  "bg-[#F0E8DA] text-[#755815] dark:bg-[#221D17] dark:text-[#D9A441]", // gold
-  "bg-[#F7E9D0] text-[#8A5A18] dark:bg-[#2A2318] dark:text-[#E0B063]", // amber
-  "bg-[#F5E3DA] text-[#8A4F35] dark:bg-[#2A1F1A] dark:text-[#D99878]", // clay
-  "bg-[#E8EDDE] text-[#5A6B3D] dark:bg-[#1F2419] dark:text-[#A8BC8A]", // olive
-  "bg-[#E2E9EC] text-[#46626E] dark:bg-[#1A2226] dark:text-[#8FB3C0]", // dusty blue
-];
-
-export default async function DigestPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-
-  const digestDetails = await prisma.digest.findFirst({
-    where: {
-      id,
-    },
+const getAllDigests = cache(async () => {
+  const allDigests = await prisma.digest.findMany({
     include: {
       articles: true,
       topic: {
@@ -50,6 +39,55 @@ export default async function DigestPage({
       },
     },
   });
+
+  const digestLookup = new Map<string, Record<string, any>>();
+
+  allDigests.forEach((d) => {
+    if (!digestLookup.has(d.id)) {
+      digestLookup.set(d.id, d);
+    }
+  });
+
+  return digestLookup;
+});
+
+export const generateMetadata = async (
+  {
+    params,
+  }: {
+    params: Promise<{ id: string }>;
+  },
+  parent: ResolvingMetadata,
+): Promise<Metadata> => {
+  const { id } = await params;
+
+  const digestDetails = (await getAllDigests()).get(id);
+
+  const prevData = await parent;
+
+  return {
+    title: digestDetails?.headline ?? prevData.title,
+    description: digestDetails?.signal ?? prevData.description,
+  };
+};
+
+export default async function DigestPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const digestDetails = (await getAllDigests()).get(id) as Digest & {
+    articles: DigestArticle[];
+    topic: Topic & { user: Partial<User> & { topics: Partial<Topic>[] } };
+  };
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const isOwner = session ? session.user.id === digestDetails.userId : false;
 
   if (!digestDetails) {
     return notFound();
@@ -138,18 +176,20 @@ export default async function DigestPage({
                 </p>
               </div>
 
-              <ReactionsSection
-                sourceId={source.sourceId}
-                articleId={source.id}
-                reaction={source.reaction}
-              />
+              {isOwner && (
+                <ReactionsSection
+                  sourceId={source.sourceId}
+                  articleId={source.id}
+                  reaction={source.reaction}
+                />
+              )}
             </li>
           ))}
         </ul>
       </section>
 
       {/* Footer */}
-      
+      <DigestShare baseUrl={BASE_URL!} isOwner={isOwner} />
     </main>
   );
 }
