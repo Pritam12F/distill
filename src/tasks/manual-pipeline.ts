@@ -6,11 +6,13 @@ import { filterArticles } from "@/services/pipeline/filter";
 import { getNewsData } from "@/services/pipeline/scrapers/newsapi";
 import { rssScraper } from "@/services/pipeline/scrapers/rss";
 import { promiseResolver } from "@/utils/resolver";
-import { sendDailyEmail } from "@/services/pipeline/email";
 import { buildTitlePrompt } from "@/lib/prompt-builder";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
 import { titleSummarySchema } from "@/zod/api";
+import { prisma } from "@/lib/prisma";
+import { EMAIL_SUBJECT_SYSTEM_PROMPT } from "@/constants/prompts";
+import { sendDailyEmail } from "@/services/pipeline/email";
 
 export async function manualPipeline() {
   const topics = SUGGESTED_TOPICS.slice(0, 2);
@@ -20,8 +22,25 @@ export async function manualPipeline() {
     rssSources: t.sources.filter((s) => s.type === "rss").map((u) => u.value),
   }));
 
-  const newsApiArticles = (await getNewsData([...topicObjects])) ?? [];
-  const rssArticles = (await rssScraper([...topicObjects])) ?? [];
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [
+        {
+          email: "pritam@distill.local",
+        },
+        {
+          email: "maya@distill.local",
+        },
+      ],
+    },
+    select: {
+      email: true,
+      name: true,
+    },
+  });
+
+  const newsApiArticles = (await getNewsData(topicObjects)) ?? [];
+  const rssArticles = (await rssScraper(topicObjects)) ?? [];
 
   const deduplicated = await removeDuplicates([
     ...newsApiArticles,
@@ -41,7 +60,7 @@ export async function manualPipeline() {
 
   const digests = await Promise.allSettled(
     filteredArticles.map(async (f) => {
-      return await synthesiseDigest(
+      const digest = await synthesiseDigest(
         f.topic,
         f.articles.map((art) => ({
           id: art.id,
@@ -50,6 +69,12 @@ export async function manualPipeline() {
           content: art.article,
         })),
       );
+
+      return {
+        ...digest,
+        topic: f.topic,
+        topicId: String(Math.floor(Math.random() * 11)),
+      };
     }),
   );
 
@@ -65,81 +90,38 @@ export async function manualPipeline() {
     return {
       success: false,
       message:
-        "No digests to create — all articles were filtered out, already seen, or synthesis failed."
+        "No digests to create — all articles were filtered out, already seen, or synthesis failed.",
     };
   }
 
   const emailTitlePrompt = buildTitlePrompt(resolvedDigests);
 
   const { output } = await generateText({
-      model: customOpenAI("gpt-5-nano"),
-      system: emailTitlePrompt,
-      prompt: buildTitlePrompt(resolvedDigests.map((d)=>({ topic: d.topic, headline: d.headline }))),
-      output: Output.object({
-        schema: titleSummarySchema,
-      })
+    model: customOpenAI("gpt-5-nano"),
+    system: EMAIL_SUBJECT_SYSTEM_PROMPT,
+    prompt: emailTitlePrompt,
+    output: Output.object({
+      schema: titleSummarySchema,
+    }),
   });
 
-  const emailSent = await sendDailyEmail({
-  userName: "Maya",
-  date: "Tuesday, 16 September 2025",
-  emailTitle: output.name,
-  baseUrl: "https://distill.news",
-  topic: "AI & Technology",
-  unsubscribeUrl: "https://distill.news/unsubscribe",
-  digests: [
-    {
-      topic: "AI & Technology",
-      topicId: "ai-technology",
-      headline: "AI agents are moving from demos into the daily workflow.",
-      consensus:
-        "The latest releases focus less on spectacle and more on dependable, repeatable work across the tools people already use.",
-      conflict:
-        "Benchmarks remain inconsistent: early adopters report big gains, while independent tests show results vary by task and setup.",
-      signal:
-        "The durable story is integration. The winners will be the products that make delegation feel ordinary, not magical.",
-      articles: [
-        {
-          id: "1",
-          title: "The new shape of AI work",
-          url: "https://example.com/ai-work",
-          oneLine: "Why utility is becoming the defining product feature.",
-          publishedAt: "2025-09-16",
-        },
-        {
-          id: "2",
-          title: "Inside the agent platform race",
-          url: "https://example.com/agents",
-          oneLine: "Platforms are competing on reliability and reach.",
-          publishedAt: null,
-        },
-      ],
-    },
-    {
-      topic: "Climate",
-      topicId: "climate",
-      headline: "Clean energy is scaling, but the grid is the bottleneck.",
-      consensus:
-        "Investment and deployment are accelerating across solar, storage, and transmission projects worldwide.",
-      conflict: null,
-      signal:
-        "Watch permitting and grid interconnection queues: that is where the next decade of progress will be won or delayed.",
-      articles: [
-        {
-          id: "3",
-          title: "The grid upgrade nobody can skip",
-          url: "https://example.com/grid",
-          oneLine: "Transmission is now the climate infrastructure story.",
-          publishedAt: "2025-09-16",
-        },
-      ],
-    },
-  ],
-  });
+  await Promise.all(
+    users.map(async (u) => {
+      return await sendDailyEmail({
+        emailTitle: output.name,
+        userEmail: u.email,
+        userName: u.name,
+        digests: resolvedDigests,
+        baseUrl: process.env.BASE_URL!,
+        date: new Date().toISOString().split("T")[0],
+        unsubscribeUrl: "",
+      });
+    }),
+  );
 
   return {
     success: true,
     message: "Test pipeline run successfully",
-    emailId: emailSent.data?.id,
-  }
+    emailId: "",
+  };
 }
