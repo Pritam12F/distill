@@ -49,16 +49,16 @@ Nothing else this week matters if a new user can't create topics.
 
 **Topic picker (3h)**
 
-- [ ] Render `SUGGESTED_TOPICS` as selectable chips
-- [ ] Local `useState` for selection — no Context needed
-- [ ] Enforce a max (5 topics) with a visible count
-- [ ] Empty-selection state on the submit button
+- [x] Render `SUGGESTED_TOPICS` as selectable chips
+- [x] Local `useState` for selection — no Context needed
+- [x] Enforce a max (5 topics) with a visible count
+- [x] Empty-selection state on the submit button
 
 **Submission (2h)**
 
-- [ ] Server action creating `Topic` rows, copying `name` and `sources` from the constant
-- [ ] Redirect to `/home` on success
-- [ ] Handle the case where a user already has topics — skip onboarding, straight to home
+- [x] Server action creating `Topic` rows, copying `name` and `sources` from the constant
+- [x] Redirect to `/home` on success
+- [x] Handle the case where a user already has topics — skip onboarding, straight to home
 
 **Home empty state (1h)**
 

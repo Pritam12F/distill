@@ -1,38 +1,40 @@
 "use server";
 
 import { DigestCardProps } from "@/components/digest-card";
+import { topicColors } from "@/constants/constants";
 import { prisma } from "@/lib/prisma";
 
 export async function getDigests(
   userId: string,
 ): Promise<{ currDigests: DigestCardProps[]; prevDigests: DigestCardProps[] }> {
+  const timeNow = new Date();
+  timeNow.setUTCHours(0, 0, 0, 0);
+  const yesterday = new Date(timeNow.getTime() - 86_400_000);
+  const tomorrow = new Date(timeNow.getTime() + 86_400_000);
+
   const sortedDigests = await prisma.digest.findMany({
     where: {
-      id: userId,
+      userId,
+      createdAt: {
+        gte: yesterday,
+        lt: tomorrow,
+      },
     },
     orderBy: {
-      createdAt: "asc",
+      createdAt: "desc",
     },
     include: {
       topic: true,
-      articles: {
+      _count: {
         select: {
-          sourceId: true,
+          articles: true,
         },
       },
     },
   });
 
-  const currentTime = new Date();
-  const currentDate = currentTime.getDate();
-
-  const currentISO = new Date().toISOString().split("T")[0];
-  const prevISO = new Date(currentTime.setDate(currentDate - 1))
-    .toISOString()
-    .split("T")[0];
-
   const currDigests = sortedDigests
-    .filter((d) => d.createdAt.toISOString().split("T")[0] === currentISO)
+    .filter((d) => d.createdAt >= timeNow && d.createdAt < tomorrow)
     .map((m, i) => ({
       id: m.id,
       topic: m.topic.name,
@@ -41,12 +43,14 @@ export async function getDigests(
       hasConflict: m.conflict,
       date: m.createdAt.toISOString().split("T")[0],
       isUnread: true,
-      accentIndex: i,
-      sourceCount: m.articles.length,
+      accentIndex:
+        [m.topic.name].reduce((acc, curr) => acc + curr.charCodeAt(0), 0) %
+        topicColors.length,
+      sourceCount: m._count.articles,
     }));
 
   const prevDigests = sortedDigests
-    .filter((d) => d.createdAt.toISOString().split("T")[0] === prevISO)
+    .filter((d) => d.createdAt >= yesterday && d.createdAt < timeNow)
     .map((m, i) => ({
       id: m.id,
       topic: m.topic.name,
@@ -55,8 +59,10 @@ export async function getDigests(
       hasConflict: m.conflict,
       date: m.createdAt.toISOString().split("T")[0],
       isUnread: true,
-      accentIndex: i,
-      sourceCount: m.articles.length,
+      accentIndex:
+        [m.topic.name].reduce((acc, curr) => acc + curr.charCodeAt(0), 0) %
+        topicColors.length,
+      sourceCount: m._count.articles,
     }));
 
   return {

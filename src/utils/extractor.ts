@@ -1,6 +1,7 @@
-import { browser } from "@/lib/browser";
+import { getBrowser } from "@/lib/browser";
 import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
+import { Browser } from "puppeteer";
 import { v4 as uuidv4 } from "uuid";
 
 export type ArticleType = {
@@ -65,10 +66,9 @@ async function fetchWithAPI(url: string) {
 }
 
 async function fetchWithPuppeteer(dynamicWebUrl: string) {
-  let page;
+  const browser = await getBrowser();
+  const page = await browser.newPage();
   try {
-    const browserClient = await browser;
-    page = await browserClient.newPage();
     await page.setUserAgent(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     );

@@ -6,7 +6,6 @@ import { customOpenAI } from "@/lib/custom-openai";
 
 export const synthesisSchema = z.object({
   headline: z.string().max(120),
-  topic: z.string().min(1),
   consensus: z.string(),
   conflict: z.string().nullable(),
   signal: z.string(),
@@ -15,7 +14,7 @@ export const synthesisSchema = z.object({
       id: z.string(),
       title: z.string(),
       url: z.string().refine((val) => {
-        try{
+        try {
           new URL(val);
           return true;
         } catch {
@@ -37,7 +36,7 @@ export async function synthesiseDigest(
     prompt: buildSynthesisUserPrompt(topic, articles),
     output: Output.object({
       schema: synthesisSchema,
-    })
+    }),
   });
 
   return output;

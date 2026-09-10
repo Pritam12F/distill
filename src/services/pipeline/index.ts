@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { removeDuplicates } from "./deduplicate";
 import { filterArticles } from "./filter";
 import { synthesiseDigest } from "./digest-generator";
@@ -11,6 +12,8 @@ import { buildTitlePrompt } from "@/lib/prompt-builder";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
 import { titleSummarySchema } from "@/zod/api";
+import { EMAIL_SUBJECT_SYSTEM_PROMPT } from "@/constants/prompts";
+import { checkBrowser, closeBrowser, getBrowser } from "@/lib/browser";
 
 type PipelineMessageType = {
   success: boolean;
@@ -47,7 +50,7 @@ type PiplelineFinalOutput =
 
 export async function pipeline() {
   const users = await prisma.user.findMany({
-    select: { id: true, topics: true },
+    select: { id: true, topics: true, email: true, name: true },
   });
 
   const allUserDigests = await Promise.allSettled(
@@ -68,6 +71,10 @@ export async function pipeline() {
 async function core(topics: TopicsType[], user: Partial<User>) {
   try {
     const articles = await getArticles(topics);
+
+    if (checkBrowser()) {
+      await closeBrowser();
+    }
 
     const deduplicated = await removeDuplicates(articles, user.id);
 
@@ -95,6 +102,7 @@ async function core(topics: TopicsType[], user: Partial<User>) {
           );
 
           return {
+            topic: a.topic,
             topicId: topicIdByName.get(a.topic)!,
             ...generated,
             articles: generated.articles.map((art) => ({
@@ -107,7 +115,8 @@ async function core(topics: TopicsType[], user: Partial<User>) {
     );
 
     digests.forEach((d, i) => {
-      if (d.status === "rejected") {
+      if (d.status === "fulfilled" && !d.value) return;
+      else if (d.status === "rejected") {
         console.error(
           `Synthesis failed for topic "${topArticles[i].topic}":`,
           d.reason,
@@ -130,6 +139,14 @@ async function core(topics: TopicsType[], user: Partial<User>) {
     }
 
     const digestRepo = await addDigestsToRepo(user.id!, resolvedDigests);
+
+    if (!digestRepo.digestCount) {
+      return {
+        success: false,
+        message: "Failed to save any digests to the database.",
+      };
+    }
+
     const userPrompt = buildTitlePrompt(digestRepo.digests);
 
     const structured = digestRepo.digests.map((d) => ({
@@ -144,8 +161,8 @@ async function core(topics: TopicsType[], user: Partial<User>) {
 
     const { output } = await generateText({
       model: customOpenAI("gpt-5-nano"),
-      system: userPrompt,
-      prompt: buildTitlePrompt(digestRepo.digests),
+      system: EMAIL_SUBJECT_SYSTEM_PROMPT,
+      prompt: userPrompt,
       output: Output.object({
         schema: titleSummarySchema,
       }),
@@ -154,24 +171,17 @@ async function core(topics: TopicsType[], user: Partial<User>) {
     try {
       await sendDailyEmail({
         userName: user.name!,
+        userEmail: user.email!,
         emailTitle: output.name,
         digests: structured,
         unsubscribeUrl: "",
-        baseUrl: "localhost:3000",
-        date: "",
-        topic: "",
+        baseUrl: process.env.BASE_URL!,
+        date: new Date().toISOString().split("T")[0],
       });
 
       console.log("Email sent successfully");
     } catch (err) {
       console.error("Error sending email");
-    }
-
-    if (!digestRepo.digestCount) {
-      return {
-        success: false,
-        message: "Failed to save any digests to the database.",
-      };
     }
 
     return {

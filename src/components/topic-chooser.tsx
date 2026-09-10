@@ -149,7 +149,6 @@ export function TopicChooser({ selectedIndices }: TopicChooserProps) {
               if (onBoardedResult && onBoardedResult.success) {
                 toast(onBoardedResult.message);
 
-                revalidatePath("/");
                 navigate.push("/");
               }
             }}
