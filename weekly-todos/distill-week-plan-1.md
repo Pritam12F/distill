@@ -64,6 +64,8 @@ Nothing else this week matters if a new user can't create topics.
 
 - [ ] Branch the empty state: no topics at all vs topics but no digests yet. "Your first briefing is on its way" is wrong for someone who hasn't picked anything
 
+- [ ] Add suitable navbar
+
 ---
 
 ## Wednesday — deploy and schedule
