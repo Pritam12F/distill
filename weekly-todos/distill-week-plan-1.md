@@ -62,9 +62,9 @@ Nothing else this week matters if a new user can't create topics.
 
 **Home empty state (1h)**
 
-- [ ] Branch the empty state: no topics at all vs topics but no digests yet. "Your first briefing is on its way" is wrong for someone who hasn't picked anything
+- [x] Branch the empty state: no topics at all vs topics but no digests yet. "Your first briefing is on its way" is wrong for someone who hasn't picked anything
 
-- [ ] Add suitable navbar
+- [x] Add suitable navbar
 
 ---
 

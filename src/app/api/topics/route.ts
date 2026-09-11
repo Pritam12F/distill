@@ -79,36 +79,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } },
-) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: "User not authorized" }, { status: 400 });
-  }
-
-  if (!params || !params.id) {
-    return NextResponse.json({ error: "No topicId provided" }, { status: 403 });
-  }
-
-  try {
-    return await prisma.topic.delete({
-      where: {
-        userId: session.user.id,
-        id: params.id,
-      },
-    });
-  } catch (e) {
-    console.error(e);
-
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Unknown error" },
-      { status: 500 },
-    );
-  }
-}

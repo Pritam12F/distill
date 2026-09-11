@@ -35,13 +35,18 @@ export async function PATCH(
   const reaction = data.reaction;
 
   try {
-    return await prisma.digestArticle.update({
+    const updatedArticle = await prisma.digestArticle.update({
       where: {
         id: digestId,
       },
       data: {
         reaction,
       },
+    });
+
+    return NextResponse.json({
+      message: "article updated successfully",
+      data: updatedArticle,
     });
   } catch (e) {
     console.error(e);
@@ -50,5 +55,45 @@ export async function PATCH(
       { error: e instanceof Error ? e.message : "Unknown error" },
       { status: 500 },
     );
+  }
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const { id } = await params;
+
+  if (!id && !session) {
+    return NextResponse.json({
+      error: "No digestId or userId provided/authorized",
+    });
+  }
+
+  try {
+    const allDigests = await prisma.digestArticle.findMany({
+      where: {
+        id: id,
+        userId: session?.user.id,
+      },
+    });
+
+    return NextResponse.json({
+      message: "Fetched all digests",
+      data: allDigests,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return NextResponse.json({
+      error:
+        err instanceof Error
+          ? err.message
+          : "Unknown error trying to fetch articles",
+    });
   }
 }
