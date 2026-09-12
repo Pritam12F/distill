@@ -1,6 +1,4 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -10,18 +8,10 @@ export async function GET(
   // In this version of Next.js `params` is a Promise and must be awaited.
   const { id } = await params;
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const digest = await prisma.digest.findFirst({
       // Scope by userId so a user can only read their own digests.
-      where: { id, userId: session.user.id },
+      where: { id },
       include: { articles: true },
     });
 

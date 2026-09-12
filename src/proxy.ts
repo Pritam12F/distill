@@ -1,26 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 
-export async function proxy(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+const PUBLIC = ["/", "/signin", "/signup", "/digest"];
 
-  if (!session) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isPublic = PUBLIC.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-current-pathname", pathname);
+
+  if (!isPublic) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) return NextResponse.redirect(new URL("/signin", request.url));
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
-
-export const config = {
-  matcher: [
-    "/api/topics/:path*",
-    "/api/digests",
-    "/api/feedback",
-    "/home/:path*",
-    "/archive/:path*",
-    "/settings/:path*",
-  ],
-};

@@ -72,10 +72,10 @@ Nothing else this week matters if a new user can't create topics.
 
 **Deploy (2h)**
 
-- [ ] Hosted Postgres — Neon or Supabase free tier
-- [ ] `prisma migrate deploy` against it
-- [ ] Deploy to Vercel, all env vars set
-- [ ] Confirm auth works in production — better-auth needs correct `BASE_URL`
+- [x] Hosted Postgres — Neon or Supabase free tier
+- [x] `prisma migrate deploy` against it
+- [x] Deploy to Vercel, all env vars set
+- [x] Confirm auth works in production — better-auth needs correct `BASE_URL`
 
 **Cron (3h)**
 
