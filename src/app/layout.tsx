@@ -1,11 +1,10 @@
+import "./globals.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { Toaster } from "sonner";
 import NavbarWrapper from "@/components/navbar";
-import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { findNavType } from "@/utils/find-nav-type";
-import "./globals.css";
+import { headers } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -33,23 +32,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headerObj = await headers();
-
-  let pathName;
-
-  for (const [header, value] of headerObj.entries()) {
-    if (header === "x-current-pathname") {
-      pathName = value;
-    }
-  }
-
   const authObj = await auth.api.getSession({
     headers: await headers(),
   });
 
   const authenticated = Boolean(authObj?.session);
-  const navType = findNavType(pathName!, authenticated);
-
   return (
     <html
       lang="en"
@@ -57,7 +44,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Toaster />
-        <NavbarWrapper type={navType.type} />
+        <NavbarWrapper authStatus={authenticated} />
         {children}
       </body>
     </html>

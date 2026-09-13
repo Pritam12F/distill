@@ -1,40 +1,13 @@
-import { NavbarType } from "@/components/navbar";
+export type NavType = "main" | "marketing" | "minimal";
 
-export function findNavType(
-  pathName: string,
-  authenticated: boolean,
-): NavbarType {
-  console.log(pathName);
-  if (pathName === "/") {
-    if (authenticated) {
-      return {
-        type: "main",
-      };
-    }
-    return {
-      type: "marketing",
-    };
-  } else if (["/signin", "/signup"].includes(pathName)) {
-    return {
-      type: "minimal",
-    };
-  } else if (pathName === "/onboarding") {
-    return {
-      type: "minimal",
-    };
-  } else if (pathName.startsWith("/digest")) {
-    if (authenticated) {
-      return {
-        type: "main",
-      };
-    }
-
-    return {
-      type: "marketing",
-    };
-  } else {
-    return {
-      type: "main",
-    };
+export function getNavType(pathname: string, authenticated: boolean): NavType {
+  if (["/signin", "/signup", "/onboarding"].includes(pathname)) {
+    return "minimal";
   }
+
+  if (pathname === "/" || pathname.startsWith("/digest/")) {
+    return authenticated ? "main" : "marketing";
+  }
+
+  return "main";
 }

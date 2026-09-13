@@ -95,7 +95,7 @@ Nothing else this week matters if a new user can't create topics.
 
 **Domain (2h)**
 
-- [ ] Buy a domain if you haven't
+- [x] Buy a domain if you haven't
 - [ ] Verify it in Resend, SPF and DKIM records
 - [ ] Wait out DNS propagation — start this first thing, it's the only blocking wait this week
 - [ ] Swap `onboarding@resend.dev` for the real sender

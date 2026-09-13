@@ -2,22 +2,28 @@
 
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { usePathname } from "next/navigation";
+import { getNavType } from "@/utils/find-nav-type";
 
 export type NavbarType = {
-  type: "marketing" | "minimal" | "main";
+  authStatus: boolean;
 };
 
-export default function NavbarWrapper({ type }: NavbarType) {
+export default function NavbarWrapper({ authStatus }: NavbarType) {
+  const pathname = usePathname();
+
+  const navType = getNavType(pathname, authStatus);
+
   return (
     <main className="flex max-h-fit flex-col">
       {/* MARKETING */}
-      {type === "marketing" && <MarketingVariant />}
+      {navType === "marketing" && <MarketingVariant />}
 
       {/* MINIMAL */}
-      {type === "minimal" && <MinimalVariant />}
+      {navType === "minimal" && <MinimalVariant />}
 
       {/* MAIN */}
-      {type === "main" && <MainVariant />}
+      {navType === "main" && <MainVariant />}
     </main>
   );
 }
