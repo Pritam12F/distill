@@ -22,7 +22,7 @@ export type SendEmail = {
 export async function sendDailyEmail(props: SendEmail) {
   try {
     return await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "pritam@distill.devzy.live",
       to: props.userEmail,
       subject: `Your daily digests on ${props.digests
         .slice(0, 2)
