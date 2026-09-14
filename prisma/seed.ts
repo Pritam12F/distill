@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { hashUrl } from "@/services/pipeline/hasher";
-import { promiseResolver } from "@/utils/resolver";
 import { prisma } from "@/lib/prisma";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -236,8 +235,6 @@ async function seedDb() {
         );
       }
     });
-
-    const resolved = promiseResolver(seenArticles);
   });
 
   const secondSeed = prisma.$transaction(async (tx) => {
@@ -321,8 +318,6 @@ async function seedDb() {
       console.error(`Transaction no: ${i + 1} failed - ${p.reason}`);
     }
   });
-
-  return promiseResolver(result);
 }
 
 seedDb()

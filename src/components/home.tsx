@@ -1,10 +1,10 @@
-"use click";
+"use client";
 
 import Link from "next/link";
 import { DigestCard, DigestCardProps } from "./digest-card";
 import { Button } from "./ui/button";
 import { AuthObjectType } from "@/types/auth";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { generateFirstDigest } from "@/actions/generate-first";
 
@@ -21,6 +21,8 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
       return;
     }
 
+    const toastId = String(toast.loading("Generating..."));
+
     const { error, data } = await generateFirstDigest({
       id: auth?.user.id!,
       name: auth?.user.name!,
@@ -28,13 +30,18 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
     });
 
     if (error) {
-      toast.error(error.reason);
+      toast.error(error.reason, {
+        toasterId: toastId,
+      });
+
+      toast.dismiss(toastId);
 
       return;
     }
 
     if (data) {
-      toast(data.message);
+      toast(data.message, { toasterId: toastId });
+      toast.dismiss(toastId);
     }
   }, [auth, currDigests]);
 

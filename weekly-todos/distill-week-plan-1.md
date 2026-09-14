@@ -87,7 +87,7 @@ Nothing else this week matters if a new user can't create topics.
 
 **Manual trigger (1h)**
 
-- [ ] A way to fire the cron route by hand so you're not waiting for 2am to test
+- [x] A way to fire the cron route by hand so you're not waiting for 2am to test
 
 ---
 
