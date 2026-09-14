@@ -65,7 +65,7 @@ model DigestArticle {
   url         String
   oneLine     String
   sourceId    String
-  publishedAt DateTime?
+  publishedAt DateTime  @default(now())
   reaction    Reaction?
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)

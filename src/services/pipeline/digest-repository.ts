@@ -79,15 +79,16 @@ export async function addDigestsToRepo(
 
         const articles = await tx.digestArticle.createManyAndReturn({
           data: d.articles.map((a) => {
-            const parsedDate = a.publishedAt ? new Date(a.publishedAt) : null;
+            const parsedDate = a.publishedAt
+              ? new Date(a.publishedAt)
+              : new Date();
 
             return {
               title: a.title,
               url: a.url,
               oneLine: a.oneLine,
               sourceId: a.id,
-              publishedAt:
-                parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : null,
+              publishedAt: parsedDate,
               digestId: digest.id,
               userId,
             };

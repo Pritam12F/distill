@@ -104,7 +104,7 @@ async function seedDb() {
               url: "https://ft.com/example-four",
               oneLine:
                 "Where the benchmark result turns into budget decisions.",
-              publishedAt: null,
+              publishedAt: hoursAgo(2),
               reaction: null,
             },
           ],

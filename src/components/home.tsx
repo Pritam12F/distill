@@ -4,7 +4,7 @@ import Link from "next/link";
 import { DigestCard, DigestCardProps } from "./digest-card";
 import { Button } from "./ui/button";
 import { AuthObjectType } from "@/types/auth";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { toast } from "sonner";
 import { generateFirstDigest } from "@/actions/generate-first";
 
