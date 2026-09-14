@@ -44,7 +44,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Toaster />
-        <NavbarWrapper authStatus={authenticated} />
+        <NavbarWrapper auth={authObj} />
         {children}
       </body>
     </html>

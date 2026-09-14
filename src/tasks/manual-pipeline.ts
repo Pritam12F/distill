@@ -110,7 +110,7 @@ export async function manualPipeline() {
       return await sendDailyEmail({
         emailTitle: output.name,
         userEmail: u.email,
-        userName: u.name,
+        userName: u.name!,
         digests: resolvedDigests,
         baseUrl: process.env.BASE_URL!,
         date: new Date().toISOString().split("T")[0],

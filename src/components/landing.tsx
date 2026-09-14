@@ -55,18 +55,6 @@ const summaryPoints = [
 export function Landing() {
   return (
     <main className="min-h-screen bg-[#FBF6EE] text-[#1A1714] dark:bg-[#14110E] dark:text-[#F3EDE3]">
-      {/* <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 lg:px-10">
-        <span className="font-serif text-2xl tracking-tight">
-          distill<span className="text-[#755815] dark:text-[#D9A441]">.</span>
-        </span>
-        <a
-          href="#contact"
-          className="inline-flex items-center rounded-full bg-[#1A1714] px-5 py-2.5 text-sm font-medium text-[#FBF6EE] transition-transform hover:-translate-y-0.5 dark:bg-[#F3EDE3] dark:text-[#14110E]"
-        >
-          Start free <ArrowUpRight className="ml-2 h-4 w-4" />
-        </a>
-      </nav> */}
-
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-6 pb-20 pt-16 lg:px-10 lg:pb-28 lg:pt-24">
         <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">

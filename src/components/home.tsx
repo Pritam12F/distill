@@ -1,12 +1,43 @@
+"use click";
+
 import Link from "next/link";
 import { DigestCard, DigestCardProps } from "./digest-card";
+import { Button } from "./ui/button";
+import { AuthObjectType } from "@/types/auth";
+import { useCallback } from "react";
+import { toast } from "sonner";
+import { generateFirstDigest } from "@/actions/generate-first";
 
 type HomePageProps = {
   currDigests: DigestCardProps[];
   prevDigests: DigestCardProps[];
+  auth: AuthObjectType;
 };
 
-export function HomePage({ currDigests, prevDigests }: HomePageProps) {
+export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
+  const onGenerate = useCallback(async () => {
+    if (currDigests.length > 0) {
+      toast("You already have digests!");
+      return;
+    }
+
+    const { error, data } = await generateFirstDigest({
+      id: auth?.user.id!,
+      name: auth?.user.name!,
+      email: auth?.user.email!,
+    });
+
+    if (error) {
+      toast.error(error.reason);
+
+      return;
+    }
+
+    if (data) {
+      toast(data.message);
+    }
+  }, [auth, currDigests]);
+
   return (
     <div className="min-h-screen bg-[#FBF6EE] p-8 dark:bg-[#14110E]">
       <div className="mx-auto flex max-w-2xl flex-col gap-10">
@@ -21,15 +52,26 @@ export function HomePage({ currDigests, prevDigests }: HomePageProps) {
                 Your first briefing is on its way.
               </h2>
               <p className="max-w-sm text-sm text-[#6E645A] dark:text-[#A69A8B]">
-                Digests arrive each morning at 7am with the stories that matter
+                Digests arrive each morning at 6am with the stories that matter
                 most to your topics.
               </p>
-              <Link
-                href="/settings"
-                className="mt-2 rounded-full border border-[#DCD2C2] px-4 py-1.5 text-sm text-[#755815] transition-colors hover:bg-[#F0E8DA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:border-[#332C24] dark:text-[#D9A441] dark:hover:bg-[#221D17] dark:focus-visible:ring-[#D9A441]"
-              >
-                Manage your topics
-              </Link>
+              <div className="flex flex-row justify-around space-x-7">
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    onClick={onGenerate}
+                    className="rounded-full cursor-pointer bg-[#755815] px-5 py-[21px] text-sm text-[#FBF6EE] transition-colors hover:bg-[#5F4711] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:bg-[#D9A441] dark:text-[#14110E] dark:hover:bg-[#C4932F] dark:focus-visible:outline-[#D9A441]"
+                  >
+                    Generate first digest
+                  </Button>
+
+                  <Link
+                    href="/settings"
+                    className="rounded-full border border-[#DCD2C2] px-5 py-2.5 text-sm text-[#6E645A] transition-colors hover:border-[#755815] hover:text-[#755815] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:border-[#332C24] dark:text-[#A69A8B] dark:hover:border-[#D9A441] dark:hover:text-[#D9A441] dark:focus-visible:outline-[#D9A441]"
+                  >
+                    Manage your topics
+                  </Link>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col gap-3">

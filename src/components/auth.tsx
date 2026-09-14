@@ -31,7 +31,7 @@ export function AuthPage({ authType }: { authType: "signin" | "signup" }) {
 
     if (data) {
       toast("Logged in with google");
-      navigate.push("/");
+      navigate.push("/onboarding");
     }
   }, [authType]);
 
@@ -78,7 +78,7 @@ export function AuthPage({ authType }: { authType: "signin" | "signup" }) {
 
     if (data) {
       toast("Signed in");
-      navigate.push("/");
+      navigate.push("/onboarding");
     }
   }, [credentialsState]);
 
@@ -96,7 +96,7 @@ export function AuthPage({ authType }: { authType: "signin" | "signup" }) {
 
     if (data) {
       toast("Registered in");
-      navigate.push("/");
+      navigate.push("/onboarding");
     }
   }, []);
 
@@ -202,7 +202,7 @@ export function AuthPage({ authType }: { authType: "signin" | "signup" }) {
           <button
             type="button"
             onClick={googleHandler}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-[#DCD2C2] px-4 py-2.5 text-sm font-medium text-[#1A1714] transition-colors hover:border-[#755815] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:border-[#332C24] dark:text-[#F3EDE3] dark:hover:border-[#D9A441] dark:focus-visible:ring-[#D9A441]"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[#DCD2C2] px-4 py-2.5 text-sm font-medium text-[#1A1714] transition-colors hover:border-[#755815] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:border-[#332C24] dark:text-[#F3EDE3] dark:hover:border-[#D9A441] dark:focus-visible:ring-[#D9A441]"
           >
             <Globe className="size-4" aria-hidden="true" />
             Continue with Google

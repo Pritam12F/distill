@@ -25,5 +25,11 @@ export default async function Home() {
 
   const { currDigests, prevDigests } = await getDigests(session.user.id);
 
-  return <HomePage currDigests={currDigests} prevDigests={prevDigests} />;
+  return (
+    <HomePage
+      currDigests={currDigests}
+      prevDigests={prevDigests}
+      auth={session}
+    />
+  );
 }

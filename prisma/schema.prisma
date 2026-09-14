@@ -12,16 +12,15 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(uuid())
+  id             String          @id @default(cuid())
   email          String          @unique
-  password       String
   digests        Digest[]
   topics         Topic[]
   seenArticles   SeenArticle[]
   digestArticles DigestArticle[]
   createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @default(now()) @updatedAt
-  name           String
+  updatedAt      DateTime        @updatedAt
+  name           String?
   emailVerified  Boolean         @default(false)
   image          String?
   sessions       Session[]

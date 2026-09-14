@@ -44,7 +44,34 @@ export type TopicsType = {
   sources?: string[];
 };
 
-type PiplelineFinalOutput =
+export type CoreFailureType = {
+  message: string;
+  success: boolean;
+};
+
+export type CoreSuccessType = {
+  success: boolean;
+  message: string;
+  digestCount: number;
+  articleCount: number;
+  digests: {
+    topic: string;
+    articles: {
+      title: string;
+      id: string;
+      url: string;
+    }[];
+    id: string;
+    createdAt: Date;
+    headline: string;
+    consensus: string;
+    conflict: string | null;
+    signal: string;
+    topicId: string;
+  }[];
+};
+
+export type PiplelineFinalOutput =
   | PipelineMessageType
   | (PipelineMessageType & DigestRepoType)[];
 
@@ -68,7 +95,10 @@ export async function pipeline() {
   return allUserDigestsResolved as PiplelineFinalOutput;
 }
 
-async function core(topics: TopicsType[], user: Partial<User>) {
+export async function core(
+  topics: TopicsType[],
+  user: Partial<User>,
+): Promise<CoreFailureType | CoreSuccessType> {
   try {
     const articles = await getArticles(topics);
 
