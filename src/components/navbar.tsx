@@ -32,7 +32,7 @@ function MainVariant() {
   const { data: session, isPending } = authClient.useSession();
 
   return (
-    <nav className="w-full border-b border-[#DCD2C2] bg-[#FBF6EE] dark:border-[#332C24] dark:bg-[#14110E]">
+    <nav className="w-full border-b h-15 border-[#DCD2C2] bg-[#FBF6EE] dark:border-[#332C24] dark:bg-[#14110E]">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link
           href="/"
@@ -80,7 +80,7 @@ function MainVariant() {
 
 function MarketingVariant() {
   return (
-    <nav className="w-full border-b border-[#DCD2C2] bg-[#FBF6EE] dark:border-[#332C24] dark:bg-[#14110E]">
+    <nav className="w-full border-b h-15 border-[#DCD2C2] bg-[#FBF6EE] dark:border-[#332C24] dark:bg-[#14110E]">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link
           href="/"
@@ -112,7 +112,7 @@ function MarketingVariant() {
 
 function MinimalVariant() {
   return (
-    <nav className="w-full border-b border-[#DCD2C2] bg-[#FBF6EE] dark:border-[#332C24] dark:bg-[#14110E]">
+    <nav className="w-full border-b h-15 border-[#DCD2C2] bg-[#FBF6EE] dark:border-[#332C24] dark:bg-[#14110E]">
       <div className="mx-auto flex h-14 max-w-6xl items-center px-6">
         <Link
           href="/"

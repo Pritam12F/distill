@@ -1,39 +1,61 @@
-import { ArrowUpRight, Check, Layers, Scale, Sparkles, Zap } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Check,
+  Layers,
+  Scale,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 
 const features = [
   {
-    title: 'Read across sources',
-    text: 'Distill reads every article on your topics overnight, then tells you what the sources actually agree on—not five versions of the same story.',
+    title: "Read across sources",
+    text: "Distill reads every article on your topics overnight, then tells you what the sources actually agree on—not five versions of the same story.",
     icon: Layers,
   },
   {
-    title: 'See where they disagree',
-    text: 'When two outlets report contradictory facts, that contradiction is the story. Distill surfaces it instead of burying it.',
+    title: "See where they disagree",
+    text: "When two outlets report contradictory facts, that contradiction is the story. Distill surfaces it instead of burying it.",
     icon: Scale,
   },
   {
-    title: 'Never read twice',
-    text: 'Every article you have already seen is filtered out. Your briefing gets sharper the longer you use it.',
+    title: "Never read twice",
+    text: "Every article you have already seen is filtered out. Your briefing gets sharper the longer you use it.",
     icon: Zap,
   },
-]
+];
 
 const reading = [
-  { source: 'Reuters', initials: 'R', title: 'Coding benchmark gains reproduced independently', time: '3 sources' },
-  { source: 'The Verge', initials: 'TV', title: 'Training costs fell sharply, company claims', time: 'conflict' },
-  { source: 'Ars Technica', initials: 'AT', title: 'What the HumanEval numbers actually measure', time: '2 sources' },
-]
+  {
+    source: "Reuters",
+    initials: "R",
+    title: "Coding benchmark gains reproduced independently",
+    time: "3 sources",
+  },
+  {
+    source: "The Verge",
+    initials: "TV",
+    title: "Training costs fell sharply, company claims",
+    time: "conflict",
+  },
+  {
+    source: "Ars Technica",
+    initials: "AT",
+    title: "What the HumanEval numbers actually measure",
+    time: "2 sources",
+  },
+];
 
 const summaryPoints = [
-  'Three of five sources confirm a 4–7% benchmark gain.',
-  'The Verge and Reuters disagree on training cost direction.',
-  'Autonomous coding agents may arrive 6–12 months early.',
-]
+  "Three of five sources confirm a 4–7% benchmark gain.",
+  "The Verge and Reuters disagree on training cost direction.",
+  "Autonomous coding agents may arrive 6–12 months early.",
+];
 
 export function Landing() {
   return (
     <main className="min-h-screen bg-[#FBF6EE] text-[#1A1714] dark:bg-[#14110E] dark:text-[#F3EDE3]">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 lg:px-10">
+      {/* <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 lg:px-10">
         <span className="font-serif text-2xl tracking-tight">
           distill<span className="text-[#755815] dark:text-[#D9A441]">.</span>
         </span>
@@ -43,23 +65,28 @@ export function Landing() {
         >
           Start free <ArrowUpRight className="ml-2 h-4 w-4" />
         </a>
-      </nav>
+      </nav> */}
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-6 pb-20 pt-16 lg:px-10 lg:pb-28 lg:pt-24">
         <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
           <div>
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#DCD2C2] bg-[#F0E8DA] px-4 py-2 text-xs text-[#6E645A] dark:border-[#332C24] dark:bg-[#221D17] dark:text-[#A69A8B]">
-              <Sparkles className="h-3.5 w-3.5 text-[#755815] dark:text-[#D9A441]" /> One briefing, every morning
+              <Sparkles className="h-3.5 w-3.5 text-[#755815] dark:text-[#D9A441]" />{" "}
+              One briefing, every morning
             </div>
 
             <h1 className="font-serif text-5xl leading-[1.02] tracking-[-0.03em] text-balance sm:text-6xl">
-              Five sources. <em className="text-[#755815] dark:text-[#D9A441]">One briefing.</em>
+              Five sources.{" "}
+              <em className="text-[#755815] dark:text-[#D9A441]">
+                One briefing.
+              </em>
             </h1>
 
             <p className="mt-6 max-w-xl text-lg leading-8 text-[#6E645A] dark:text-[#A69A8B]">
-              Pick your topics. Every morning, Distill reads the news and tells you what sources agree on,
-              where they contradict each other, and the one thing worth remembering.
+              Pick your topics. Every morning, Distill reads the news and tells
+              you what sources agree on, where they contradict each other, and
+              the one thing worth remembering.
             </p>
 
             <a
@@ -79,9 +106,33 @@ export function Landing() {
               aria-label="Scattered sources converging into a single signal"
               className="w-full max-w-[340px] text-[#755815] dark:text-[#D9A441]"
             >
-              <circle cx="200" cy="200" r="190" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.2" />
-              <circle cx="200" cy="200" r="140" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.2" />
-              <circle cx="200" cy="200" r="90" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.2" />
+              <circle
+                cx="200"
+                cy="200"
+                r="190"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                opacity="0.2"
+              />
+              <circle
+                cx="200"
+                cy="200"
+                r="140"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                opacity="0.2"
+              />
+              <circle
+                cx="200"
+                cy="200"
+                r="90"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                opacity="0.2"
+              />
               <g opacity="0.35" fill="currentColor">
                 <circle cx="200" cy="10" r="5" />
                 <circle cx="334" cy="66" r="4" />
@@ -123,7 +174,9 @@ export function Landing() {
 
           <div className="relative z-10 flex flex-col justify-between gap-12 p-8 text-[#FBF6EE] lg:min-h-[480px] lg:flex-row lg:items-end lg:p-12 dark:text-[#F3EDE3]">
             <div className="max-w-md">
-              <p className="mb-4 text-xs uppercase tracking-[0.22em] opacity-75">Artificial intelligence, this morning</p>
+              <p className="mb-4 text-xs uppercase tracking-[0.22em] opacity-75">
+                Artificial intelligence, this morning
+              </p>
               <p className="font-serif text-3xl leading-tight lg:text-5xl">
                 Thirty articles in. One briefing out.
               </p>
@@ -139,7 +192,9 @@ export function Landing() {
                     {item.initials}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] uppercase tracking-[0.14em] opacity-70">{item.source}</p>
+                    <p className="truncate text-[11px] uppercase tracking-[0.14em] opacity-70">
+                      {item.source}
+                    </p>
                     <p className="mt-1 text-sm leading-5">{item.title}</p>
                   </div>
                   <span className="shrink-0 rounded-full bg-[#FBF6EE]/15 px-2.5 py-1 text-[11px] dark:bg-[#F3EDE3]/15">
@@ -156,13 +211,20 @@ export function Landing() {
       <section className="mx-auto max-w-6xl px-6 pb-20 lg:px-10 lg:pb-28">
         <div className="grid gap-px overflow-hidden rounded-3xl border border-[#DCD2C2] bg-[#DCD2C2] md:grid-cols-3 dark:border-[#332C24] dark:bg-[#332C24]">
           {features.map((feature) => (
-            <article key={feature.title} className="bg-[#FBF6EE] p-8 dark:bg-[#14110E]">
+            <article
+              key={feature.title}
+              className="bg-[#FBF6EE] p-8 dark:bg-[#14110E]"
+            >
               <feature.icon
                 aria-hidden="true"
                 className="mb-6 h-10 w-10 stroke-[1] text-[#755815] dark:text-[#D9A441]"
               />
-              <h2 className="font-serif text-2xl tracking-tight">{feature.title}</h2>
-              <p className="mt-3 text-sm leading-6 text-[#6E645A] dark:text-[#A69A8B]">{feature.text}</p>
+              <h2 className="font-serif text-2xl tracking-tight">
+                {feature.title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-[#6E645A] dark:text-[#A69A8B]">
+                {feature.text}
+              </p>
             </article>
           ))}
         </div>
@@ -190,7 +252,8 @@ export function Landing() {
               Stop reading five versions of the same story.
             </h2>
             <p className="mt-5 max-w-md text-base leading-7 opacity-85">
-              Pick up to five topics. One email a day. No card, no onboarding call, unsubscribe in one click.
+              Pick up to five topics. One email a day. No card, no onboarding
+              call, unsubscribe in one click.
             </p>
             <a
               href="mailto:hello@distill.news"
@@ -207,18 +270,22 @@ export function Landing() {
               <span>5 sources</span>
             </div>
             <p className="mt-4 font-serif text-xl leading-snug tracking-tight">
-              OpenAI&apos;s reasoning model overtakes Google on coding benchmarks.
+              OpenAI&apos;s reasoning model overtakes Google on coding
+              benchmarks.
             </p>
             <ul className="mt-5 space-y-3">
               {summaryPoints.map((point) => (
-                <li key={point} className="flex gap-2.5 text-sm leading-6 text-[#6E645A] dark:text-[#A69A8B]">
+                <li
+                  key={point}
+                  className="flex gap-2.5 text-sm leading-6 text-[#6E645A] dark:text-[#A69A8B]"
+                >
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#755815] dark:text-[#D9A441]" />
                   {point}
                 </li>
               ))}
             </ul>
             <div className="mt-6 flex flex-wrap gap-2 border-t border-[#DCD2C2] pt-5 dark:border-[#332C24]">
-              {['Artificial intelligence', 'Conflict found'].map((tag) => (
+              {["Artificial intelligence", "Conflict found"].map((tag) => (
                 <span
                   key={tag}
                   className="rounded-full bg-[#F0E8DA] px-3 py-1 text-xs text-[#6E645A] dark:bg-[#221D17] dark:text-[#A69A8B]"
@@ -236,12 +303,15 @@ export function Landing() {
           distill<span className="text-[#755815] dark:text-[#D9A441]">.</span>
         </span>
         <div className="flex gap-6">
-          <a href="mailto:hello@distill.news" className="hover:text-[#1A1714] dark:hover:text-[#F3EDE3]">
+          <a
+            href="mailto:hello@distill.news"
+            className="hover:text-[#1A1714] dark:hover:text-[#F3EDE3]"
+          >
             hello@distill.news
           </a>
           <span>© 2026</span>
         </div>
       </footer>
     </main>
-  )
+  );
 }
