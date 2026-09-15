@@ -1,18 +1,18 @@
 import "dotenv/config";
 import { SUGGESTED_TOPICS } from "@/constants/constants";
-import { removeDuplicates } from "@/services/pipeline/deduplicate";
-import { synthesiseDigest } from "@/services/pipeline/digest-generator";
-import { filterArticles } from "@/services/pipeline/filter";
-import { getNewsData } from "@/services/pipeline/scrapers/newsapi";
-import { rssScraper } from "@/services/pipeline/scrapers/rss";
+import { removeDuplicates } from "../pipeline/deduplicate";
+import { synthesiseDigest } from "../pipeline/digest-generator";
+import { filterArticles } from "../pipeline/filter";
+import { getNewsData } from "../pipeline/scrapers/newsapi";
+import { rssScraper } from "../pipeline/scrapers/rss";
 import { promiseResolver } from "@/utils/resolver";
-import { buildTitlePrompt } from "@/lib/prompt-builder";
+import { buildTitlePrompt } from "@/utils/prompt-builder";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
 import { titleSummarySchema } from "@/zod/api";
 import { prisma } from "@/lib/prisma";
 import { EMAIL_SUBJECT_SYSTEM_PROMPT } from "@/constants/prompts";
-import { sendDailyEmail } from "@/services/pipeline/email";
+import { sendDailyEmail } from "../pipeline/email";
 
 export async function manualPipeline() {
   const topics = SUGGESTED_TOPICS.slice(0, 2);
@@ -125,3 +125,13 @@ export async function manualPipeline() {
     emailId: "",
   };
 }
+
+manualPipeline()
+  .then((r) => {
+    console.log("Manual pipeline was run successfully");
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error(err instanceof Error ? err.message : "Some error occured");
+    process.exit(1);
+  });

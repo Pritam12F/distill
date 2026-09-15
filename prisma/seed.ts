@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { hashUrl } from "@/services/pipeline/hasher";
+import { hashUrl } from "../src/pipeline/hasher";
 import { prisma } from "@/lib/prisma";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -17,7 +17,6 @@ async function seedDb() {
       data: {
         email: "pritam@distill.local",
         name: "Pritam",
-        password: "seeded-not-a-real-hash",
         emailVerified: true,
         topics: {
           create: [
@@ -242,7 +241,6 @@ async function seedDb() {
       data: {
         email: "maya@distill.local",
         name: "Maya",
-        password: "seeded-not-a-real-hash",
         emailVerified: true,
         topics: {
           create: [

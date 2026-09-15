@@ -1,7 +1,7 @@
 "use client";
 
 import { getDailySummary } from "@/actions/daily-summary";
-import { getMetadata } from "@/lib/microlink";
+import { getMetadata } from "@/utils/microlink";
 import {
   LandingSampleType,
   SampleArticleType,

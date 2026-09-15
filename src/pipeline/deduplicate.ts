@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ArticleType } from "@/utils/extractor";
+import { ArticleType } from "./scrapers/extractor";
 import stringComparison from "string-comparison";
 import { hashUrl } from "./hasher";
 

@@ -1,8 +1,8 @@
 import Parser from "rss-parser";
-import { fetchArticlesInBatches } from "@/utils/concurrency-limiter";
+import { fetchArticlesInBatches } from "./concurrency-limiter";
 import { CONCURRENCY_LIMIT } from "./newsapi";
 import { TopicsType } from "..";
-import { extractContent } from "@/utils/extractor";
+import { extractContent } from "./extractor";
 import { promiseResolver } from "@/utils/resolver";
 
 // Cap how many items we pull from each feed so one large feed can't blow up

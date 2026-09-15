@@ -1,5 +1,5 @@
-import { fetchArticlesInBatches } from "@/utils/concurrency-limiter";
-import { extractContent } from "@/utils/extractor";
+import { fetchArticlesInBatches } from "./concurrency-limiter";
+import { extractContent } from "./extractor";
 import { promiseResolver } from "@/utils/resolver";
 import axios from "axios";
 import { TopicsType } from "..";

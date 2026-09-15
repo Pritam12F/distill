@@ -9,8 +9,8 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "email:dev": "cd src && email dev",
-    "schedule": "npx tsx src/tasks/cron.ts",
-    "pipeline": "npx tsx src/scripts/index.ts",
+    "schedule": "npx tsx src/scripts/cron.ts",
+    "pipeline": "npx tsx src/scripts/manual-pipeline.ts",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:studio": "npx prisma studio",
     "add:testuser": "npx tsx src/scripts/add-test-user.ts"
@@ -48,7 +48,6 @@
     "openai": "^6.48.0",
     "pg": "^8.21.0",
     "prisma": "^7.8.0",
-    "puppeteer": "^25.3.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-email": "^6.9.1",

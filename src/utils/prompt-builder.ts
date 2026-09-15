@@ -1,4 +1,4 @@
-import { ArticleWithTopic } from "@/services/pipeline/deduplicate";
+import { ArticleWithTopic } from "../pipeline/deduplicate";
 
 export function buildSynthesisUserPrompt(
   topic: string,

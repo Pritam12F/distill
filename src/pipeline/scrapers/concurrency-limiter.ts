@@ -1,6 +1,6 @@
 import { ArticleType } from "./extractor";
-import { promiseResolver } from "./resolver";
-import { NewsSourceType } from "@/services/pipeline/scrapers/newsapi";
+import { promiseResolver } from "../../utils/resolver";
+import { NewsSourceType } from "./newsapi";
 
 export async function fetchArticlesInBatches(
   sources: NewsSourceType[],

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { core, type CoreSuccessType } from "@/services/pipeline";
+import { core, type CoreSuccessType } from "../pipeline";
 import { errorDecoder } from "@/utils/error-decoder";
 import { Digest } from "@prisma/client";
 import { revalidatePath } from "next/cache";

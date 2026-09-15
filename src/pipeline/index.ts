@@ -8,12 +8,11 @@ import { getArticles } from "./scrapers";
 import { promiseResolver } from "@/utils/resolver";
 import { sendDailyEmail } from "./email";
 import { User } from "@prisma/client";
-import { buildTitlePrompt } from "@/lib/prompt-builder";
+import { buildTitlePrompt } from "@/utils/prompt-builder";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
 import { titleSummarySchema } from "@/zod/api";
 import { EMAIL_SUBJECT_SYSTEM_PROMPT } from "@/constants/prompts";
-import { checkBrowser, closeBrowser, getBrowser } from "@/lib/browser";
 
 type PipelineMessageType = {
   success: boolean;
@@ -101,10 +100,6 @@ export async function core(
 ): Promise<CoreFailureType | CoreSuccessType> {
   try {
     const articles = await getArticles(topics);
-
-    if (checkBrowser()) {
-      await closeBrowser();
-    }
 
     const deduplicated = await removeDuplicates(articles, user.id);
 

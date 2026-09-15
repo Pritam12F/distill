@@ -8,22 +8,38 @@ const topic = SUGGESTED_TOPICS.find((t) => t.name === "Web Development")!;
 
 export async function addTestUser() {
   try {
-    await prisma.user.upsert({
+    const userAdded = await prisma.user.upsert({
       where: {
         email: "test_user@devzy.live",
       },
       create: {
         email: "test_user@devzy.live",
         name: "test_user",
+        topics: {
+          create: {
+            name: topic.name,
+            sources: topic.sources.map((s) => s.value),
+          },
+        },
       },
       update: {},
+      select: {
+        id: true,
+      },
     });
-    console.log("Test user was added");
-  } catch (err) {
-    const errMessage = errorDecoder(err);
 
-    console.error(errMessage);
+    return userAdded.id;
+  } catch (err) {
+    return errorDecoder(err);
   }
 }
 
-addTestUser();
+addTestUser()
+  .then((res) => {
+    console.log(`Test user of ID ${res} was added`);
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.log(err);
+    process.exit(1);
+  });

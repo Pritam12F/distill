@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SYNTHESIS_SYSTEM_PROMPT } from "@/constants/prompts";
-import { buildSynthesisUserPrompt } from "@/lib/prompt-builder";
+import { buildSynthesisUserPrompt } from "@/utils/prompt-builder";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
 

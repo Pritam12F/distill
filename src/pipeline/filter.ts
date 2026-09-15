@@ -1,16 +1,18 @@
 import "dotenv/config";
 import { RELEVANCY_SYSTEM_PROMPT } from "@/constants/prompts";
-import { buildRelevancyUserPrompt } from "@/lib/prompt-builder";
+import { buildRelevancyUserPrompt } from "@/utils/prompt-builder";
 import { ArticleWithTopic } from "./deduplicate";
 import { z } from "zod";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
 
 const RatingSchema = z.object({
-  ratings: z.array(z.object({
-    id: z.string().min(1, "Id should not be empty"),
-    score: z.number(),
- }))
+  ratings: z.array(
+    z.object({
+      id: z.string().min(1, "Id should not be empty"),
+      score: z.number(),
+    }),
+  ),
 });
 
 const RatingGenerationSchema = z.array(RatingSchema);
@@ -56,7 +58,7 @@ export const rateRelevancy = async (
       prompt: userPrompt,
       output: Output.object({
         schema: RatingSchema,
-      })
+      }),
     });
 
     return output.ratings;
