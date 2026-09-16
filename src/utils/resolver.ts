@@ -5,5 +5,5 @@ export const promiseResolver = <T>(promises: PromiseSettledResult<T>[]) => {
         promise.status === "fulfilled",
     )
     .map((promise) => promise.value)
-    .filter((value): value is NonNullable<T> => value != null);
+    .filter((value): value is NonNullable<T> => value !== null);
 };

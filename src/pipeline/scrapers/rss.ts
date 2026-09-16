@@ -1,31 +1,36 @@
 import Parser from "rss-parser";
 import { fetchArticlesInBatches } from "./concurrency-limiter";
 import { CONCURRENCY_LIMIT } from "./newsapi";
-import { TopicsType } from "..";
+import { TopicsType } from "@/types/pipeline";
 import { extractContent } from "./extractor";
 import { promiseResolver } from "@/utils/resolver";
+import { promiseLogger } from "@/utils/promise-logger";
 
 // Cap how many items we pull from each feed so one large feed can't blow up
 // the number of full-page fetches — filtering keeps only a few per topic anyway.
-const MAX_ITEMS_PER_FEED = 8;
+const MAX_ITEMS_PER_FEED = 6;
 
-export async function rssScraper(topics: TopicsType[]) {
+export async function rssScraper(
+  topics: Pick<TopicsType, "name" | "sources">[],
+) {
   const parser = new Parser();
 
   const perTopicSources = await Promise.allSettled(
     topics.map(async (t) => {
-      const sources = t.sources!;
+      const sources = t.sources;
 
       const parsedFeeds = await Promise.allSettled(
         sources.map((f) => parser.parseURL(f)),
       );
 
+      promiseLogger(parsedFeeds, "rss_feed_source");
+
       // Keep each item's topic so it survives the fetch and grouping downstream.
       return promiseResolver(parsedFeeds).flatMap((feed) =>
         feed.items
-          .filter((item) => item.link)
+          .filter((item) => Boolean(item.link))
           .slice(0, MAX_ITEMS_PER_FEED)
-          .map((item) => ({
+          .map((item, i) => ({
             url: item.link!,
             topic: t.name,
             publishedAt: item.isoDate,

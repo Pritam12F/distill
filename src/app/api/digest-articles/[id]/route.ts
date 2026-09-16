@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { reactionSchema } from "@/zod/api";
+import { reactionSchema } from "@/zod/digest";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -38,6 +38,7 @@ export async function PATCH(
     const updatedArticle = await prisma.digestArticle.update({
       where: {
         id: digestId,
+        userId: session.user.id,
       },
       data: {
         reaction,
@@ -68,7 +69,7 @@ export async function GET(
 
   const { id } = await params;
 
-  if (!id && !session) {
+  if (!id || !session) {
     return NextResponse.json({
       error: "No digestId or userId provided/authorized",
     });

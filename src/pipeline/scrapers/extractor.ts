@@ -1,22 +1,12 @@
 import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
 import { v4 as uuidv4 } from "uuid";
+import { ArticleType } from "@/types/pipeline";
 
-export type ArticleType = {
-  id: string;
-  title?: string | null;
-  topic?: string;
-  url?: string;
-  article: string;
-  siteName?: string | null;
-  length: number;
-  publishedAt?: Date | string | null;
-  keywordRelevancy?: number;
-  contentRelevancy?: number;
-};
-
-function normalizeText(article: ReturnType<Readability["parse"]>): ArticleType {
-  const normalizedArticle = article!
+function normalizeText(
+  article: NonNullable<ReturnType<Readability["parse"]>>,
+): ArticleType {
+  const normalizedArticle = article
     .textContent!.replace(/\n{3,}/g, "\n\n") // collapse 3+ newlines into 2
     .replace(/\t/g, " ") // tabs to spaces
     .replace(/ {2,}/g, " ") // collapse multiple spaces
@@ -71,7 +61,7 @@ export async function extractContent(url: string) {
     return null;
   }
 
-  const normalizedArticle = normalizeText(content);
+  const normalizedArticle = normalizeText(content!);
 
   return {
     ...normalizedArticle,

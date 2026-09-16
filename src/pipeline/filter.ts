@@ -1,24 +1,11 @@
 import "dotenv/config";
 import { RELEVANCY_SYSTEM_PROMPT } from "@/constants/prompts";
 import { buildRelevancyUserPrompt } from "@/utils/prompt-builder";
-import { ArticleWithTopic } from "./deduplicate";
-import { z } from "zod";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
-
-const RatingSchema = z.object({
-  ratings: z.array(
-    z.object({
-      id: z.string().min(1, "Id should not be empty"),
-      score: z.number(),
-    }),
-  ),
-});
-
-const RatingGenerationSchema = z.array(RatingSchema);
-
-export type RatingType = z.infer<typeof RatingSchema>;
-export type RatingGenerationType = z.infer<typeof RatingGenerationSchema>;
+import { ArticleWithTopic } from "@/types/pipeline";
+import { RatingSchema } from "@/zod/pipeline";
+import { errorDecoder } from "@/utils/error-decoder";
 
 export const rateRelevancy = async (
   groups: ArticleWithTopic[],
@@ -40,13 +27,9 @@ export const rateRelevancy = async (
       }));
     });
 
-    const flattenedItems = mockRatings.filter((r) => Array.isArray(r)).flat();
-    const singleItems = mockRatings.filter((r) => !Array.isArray(r)) as {
-      id: string;
-      score: number;
-    }[];
+    const flattenedItems = mockRatings.flatMap((r) => r);
 
-    return [...singleItems, ...flattenedItems];
+    return flattenedItems;
   }
 
   const userPrompt = buildRelevancyUserPrompt(groups);
@@ -63,7 +46,7 @@ export const rateRelevancy = async (
 
     return output.ratings;
   } catch (e) {
-    console.log(e instanceof Error ? e.message : "Error calling openAI");
+    console.error(errorDecoder(e));
     throw new Error("Error calling openAI");
   }
 };
@@ -73,8 +56,9 @@ export const filterArticles = async (
 ): Promise<ArticleWithTopic[]> => {
   const SHORTLISTED_PER_TOPIC = 5;
   const LLM_SHORTLISTED_PER_TOPIC = 3;
-  const scoredGroups = groups.map((g) => {
-    const topicWord = new Set(g.topic.trim().toLocaleLowerCase().split(/\s+/));
+
+  const keywordShortlisted = groups.map((g) => {
+    const topicWords = new Set(g.topic.trim().toLocaleLowerCase().split(/\s+/));
 
     return {
       topic: g.topic,
@@ -87,7 +71,7 @@ export const filterArticles = async (
             .toLocaleLowerCase()
             .split(/\s+/)
             .forEach((word) => {
-              if (topicWord.has(word)) wordCountRelevancy++;
+              if (topicWords.has(word)) wordCountRelevancy++;
             });
 
           a.article
@@ -95,7 +79,7 @@ export const filterArticles = async (
             .toLocaleLowerCase()
             .split(/\s+/)
             .forEach((word) => {
-              if (topicWord.has(word)) wordCountRelevancy++;
+              if (topicWords.has(word)) wordCountRelevancy++;
             });
 
           return {
@@ -103,27 +87,18 @@ export const filterArticles = async (
             keywordRelevancy: wordCountRelevancy,
           };
         })
-        .sort((a, b) => b.keywordRelevancy - a.keywordRelevancy),
+        .sort((a, b) => b.keywordRelevancy - a.keywordRelevancy)
+        .slice(0, Math.min(g.articles.length, SHORTLISTED_PER_TOPIC)),
     };
   });
-
-  const shortlisted = scoredGroups.map((g) => ({
-    topic: g.topic,
-    articles: g.articles.slice(
-      0,
-      Math.min(g.articles.length, SHORTLISTED_PER_TOPIC),
-    ),
-  }));
 
   const relevancyScoresMap = new Map<string, number>();
 
   try {
-    const results = await rateRelevancy(shortlisted);
+    const results = await rateRelevancy(keywordShortlisted);
 
     results.forEach((r) => {
-      if (r.id != null) {
-        relevancyScoresMap.set(r.id, r.score);
-      }
+      relevancyScoresMap.set(r.id, r.score);
     });
   } catch (e) {
     console.error(
@@ -132,15 +107,13 @@ export const filterArticles = async (
     );
   }
 
-  const llmQuotaApplied = shortlisted.map((m) => {
+  return keywordShortlisted.map((m) => {
     const articles = m.articles
       .map((a) => ({
         ...a,
-        contentRelevancy: relevancyScoresMap.has(a.id)
-          ? relevancyScoresMap.get(a.id)
-          : 0,
+        contentRelevancy: relevancyScoresMap.get(a.id) ?? 0,
       }))
-      .sort((a, b) => b.contentRelevancy! - a.contentRelevancy!);
+      .sort((a, b) => b.contentRelevancy - a.contentRelevancy);
 
     return {
       topic: m.topic,
@@ -150,6 +123,4 @@ export const filterArticles = async (
       ),
     };
   });
-
-  return llmQuotaApplied;
 };

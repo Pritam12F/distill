@@ -79,11 +79,11 @@ Nothing else this week matters if a new user can't create topics.
 
 **Cron (3h)**
 
-- [ ] `node-cron` will not work on Vercel's serverless model. Use a cron route: `GET /api/cron/digest` guarded by a secret header, plus `vercel.json` schedule
-- [ ] Loop users, loop their topics, one `Digest` per topic
-- [ ] `Promise.allSettled` so one failure doesn't kill the run
-- [ ] One email per user containing all their topics — not one email per topic
-- [ ] Log token cost per run
+- [x] `node-cron` will not work on Vercel's serverless model. Use a cron route: `GET /api/cron/digest` guarded by a secret header, plus `vercel.json` schedule
+- [x] Loop users, loop their topics, one `Digest` per topic
+- [x] `Promise.allSettled` so one failure doesn't kill the run
+- [x] One email per user containing all their topics — not one email per topic
+- [x] Log token cost per run
 
 **Manual trigger (1h)**
 

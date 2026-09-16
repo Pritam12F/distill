@@ -18,7 +18,9 @@ export async function addTestUser() {
         topics: {
           create: {
             name: topic.name,
-            sources: topic.sources.map((s) => s.value),
+            sources: topic.sources
+              .filter((s) => s.type === "rss")
+              .map((s) => s.value),
           },
         },
       },

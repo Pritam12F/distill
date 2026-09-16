@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { hashUrl } from "../src/pipeline/hasher";
+import { hashUrl } from "@/pipeline/hasher";
 import { prisma } from "@/lib/prisma";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -218,7 +218,7 @@ async function seedDb() {
     const seenArticles = await Promise.allSettled(
       hasehedURLs.map(({ title, urlHash }) => {
         return tx.seenArticle.create({
-          data: { urlHash: urlHash, userId: pritam.id, title },
+          data: { urlHash, userId: pritam.id, title },
           select: {
             id: true,
             title: true,

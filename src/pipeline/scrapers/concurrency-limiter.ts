@@ -1,13 +1,13 @@
-import { ArticleType } from "./extractor";
-import { promiseResolver } from "../../utils/resolver";
-import { NewsSourceType } from "./newsapi";
+import { promiseResolver } from "@/utils/resolver";
+import { ArticleType, NewsSourceType } from "@/types/pipeline";
+import { promiseLogger } from "@/utils/promise-logger";
 
 export async function fetchArticlesInBatches(
   sources: NewsSourceType[],
   fetcher: (url: string) => Promise<ArticleType | null>,
   limiter: number,
-): Promise<ArticleType[] | null> {
-  if (limiter <= 0) return null;
+): Promise<ArticleType[]> {
+  if (limiter <= 0) return [];
   const results: ArticleType[] = [];
   let currentIndex = 0;
 
@@ -19,11 +19,6 @@ export async function fetchArticlesInBatches(
     const batch: NewsSourceType[] = [];
 
     for (let i = index; i < Math.min(index + limiter, sources.length); i++) {
-      if (!sources[i]) {
-        currentIndex = i + 1;
-        break;
-      }
-
       batch.push(sources[i]);
 
       currentIndex++;
@@ -38,6 +33,8 @@ export async function fetchArticlesInBatches(
             : null;
         }),
       );
+
+      promiseLogger(allPromises, "article");
 
       const resolvedPromises = promiseResolver(allPromises);
 

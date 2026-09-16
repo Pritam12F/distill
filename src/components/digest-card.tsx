@@ -1,17 +1,7 @@
 import Link from "next/link";
 import { Layers, Scale } from "lucide-react";
 import { topicColors } from "@/constants/constants";
-
-export type DigestCardProps = {
-  id: string;
-  topic: string;
-  headline: string;
-  sourceCount: number;
-  hasConflict?: string | null;
-  date: string; // "Jun 10" or "Today"
-  isUnread?: boolean;
-  accentIndex: number; // 0-4, picks the topic chip color
-};
+import { DigestCardProps } from "@/types/digest";
 
 export function DigestCard({
   id,

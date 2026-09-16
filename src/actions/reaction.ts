@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { errorDecoder } from "@/utils/error-decoder";
 import { Reaction } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -42,8 +43,7 @@ export async function updateReaction({
       },
     };
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Error updating reaction";
+    const message = errorDecoder(err, "Error updating reaction");
 
     console.error(message);
 

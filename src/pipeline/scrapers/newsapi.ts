@@ -2,17 +2,11 @@ import { fetchArticlesInBatches } from "./concurrency-limiter";
 import { extractContent } from "./extractor";
 import { promiseResolver } from "@/utils/resolver";
 import axios from "axios";
-import { TopicsType } from "..";
+import { NewsSourceType, TopicsType } from "@/types/pipeline";
+import { promiseLogger } from "@/utils/promise-logger";
+import { errorDecoder } from "@/utils/error-decoder";
 
-export const CONCURRENCY_LIMIT = 5;
-
-export type NewsSourceType = {
-  title?: string;
-  url: string;
-  publishedAt?: Date | string;
-  source?: string;
-  topic?: string;
-};
+export const CONCURRENCY_LIMIT = 3;
 
 export async function getNewsSources(
   searchTerm = "artificial intelligence",
@@ -30,20 +24,21 @@ export async function getNewsSources(
       source: "The Guardian",
     }));
   } catch (error) {
-    console.error(
-      "Error:",
-      error instanceof Error ? error.message : "unknown error",
-    );
+    console.error(errorDecoder(error));
     return [];
   }
 }
 
-export async function getNewsData(topics: TopicsType[]) {
+export async function getNewsData(
+  topics: Pick<TopicsType, "name" | "sources">[],
+) {
   const sourcesPromises = await Promise.allSettled(
     topics.map(async (t) =>
       (await getNewsSources(t.name)).map((s) => ({ ...s, topic: t.name })),
     ),
   );
+
+  promiseLogger(sourcesPromises, "news_source");
 
   const sources = promiseResolver(sourcesPromises).flat();
 

@@ -1,3 +1,6 @@
-export function errorDecoder(error: unknown) {
-  return error instanceof Error ? error.message : "Unknown error occured";
+export function errorDecoder(
+  error: unknown,
+  message = "Unknown error occured",
+) {
+  return error instanceof Error ? error.message : message;
 }

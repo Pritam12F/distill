@@ -1,24 +1,20 @@
 import { prisma } from "@/lib/prisma";
-import { ArticleType } from "./scrapers/extractor";
 import stringComparison from "string-comparison";
 import { hashUrl } from "./hasher";
-
-export type ArticleWithTopic = {
-  topic: string;
-  articles: ArticleType[];
-};
+import { ArticleType, ArticleWithTopic } from "@/types/pipeline";
 
 export async function removeDuplicates(
   articles: ArticleType[],
-  userId?: string,
+  userId: string,
 ) {
-  const seenArticlesFetched = userId
-    ? await prisma.seenArticle.findMany({
-        where: {
-          userId,
-        },
-      })
-    : [];
+  const seenArticlesFetched = await prisma.seenArticle.findMany({
+    where: {
+      userId,
+    },
+    select: {
+      urlHash: true,
+    },
+  });
 
   // Articles the user has already seen in a previous run — tracked per-user,
   // independent of topic.
@@ -27,10 +23,6 @@ export async function removeDuplicates(
   const cos = stringComparison.cosine;
 
   const results: ArticleWithTopic[] = [];
-
-  // URLs already taken within each topic, keyed by topic. Dedup is per-topic,
-  // so the same article can still appear under a different topic.
-  const urlsByTopic = new Map<string, Set<string>>();
 
   for (const article of articles) {
     if (!article.url) continue;
@@ -45,15 +37,11 @@ export async function removeDuplicates(
     let foundTopic = results.find((r) => r.topic === topic);
 
     if (!foundTopic) {
-      foundTopic = { topic, articles: [] };
+      foundTopic = { topic, articles: [article] };
       results.push(foundTopic);
-      urlsByTopic.set(topic, new Set());
+
+      continue;
     }
-
-    const topicUrls = urlsByTopic.get(topic)!;
-
-    // Per-topic URL dedup: the same URL twice within one topic is dropped.
-    if (topicUrls.has(urlHash)) continue;
 
     // Per-topic similarity dedup: compare only against this topic's articles.
     const isDuplicate = foundTopic.articles.some((a) => {
@@ -70,7 +58,6 @@ export async function removeDuplicates(
 
     if (isDuplicate) continue;
 
-    topicUrls.add(urlHash);
     foundTopic.articles.push(article);
   }
 

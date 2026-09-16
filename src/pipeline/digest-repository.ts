@@ -1,47 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { synthesisSchema } from "./digest-generator";
-import z from "zod";
 import { hashUrl } from "./hasher";
 import { promiseResolver } from "@/utils/resolver";
-import { Prisma } from "@prisma/client";
-
-export type DigestType = z.infer<typeof synthesisSchema>;
-
-export type AddDigestsResult = {
-  digestCount: number;
-  articleCount: number;
-  digests: {
-    id: string;
-    headline: string;
-    topicId: string;
-    createdAt: Date;
-    consensus: string;
-    signal: string;
-    conflict: string | null;
-    topic: {
-      id: string;
-      name: string;
-      userId: string;
-      sources: Prisma.JsonValue;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-    articles: {
-      id: string;
-      title: string;
-      url: string;
-    }[];
-  }[];
-};
+import { Digest, DigestArticle } from "@prisma/client";
 
 export async function addDigestsToRepo(
   userId: string,
-  digests: (Omit<DigestType, "articles"> & {
+  digests: (Omit<Digest, "userId" | "createdAt" | "id"> & {
     topic: string;
-    topicId: string;
-    articles: (DigestType["articles"][number] & {
-      publishedAt: Date | string | null;
-    })[];
+  } & {
+    articles: Pick<
+      DigestArticle,
+      "id" | "publishedAt" | "title" | "url" | "oneLine"
+    >[];
   })[],
 ) {
   // Each digest and its articles are written in their own transaction, so a

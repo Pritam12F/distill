@@ -2,7 +2,7 @@ import ConsensusAndConflict from "@/components/consensus-conflict";
 import DigestShare from "@/components/digest-share";
 import { ReactionsSection } from "@/components/reaction";
 import { prisma } from "@/lib/prisma";
-import { Digest, DigestArticle, Prisma, Topic, User } from "@prisma/client";
+import { Digest, DigestArticle, Topic, User } from "@prisma/client";
 import { notFound } from "next/navigation";
 import "dotenv/config";
 import { BASE_URL, topicColors } from "@/constants/constants";
@@ -10,13 +10,6 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { cache } from "react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-
-export type DigestPageProps = Prisma.DigestGetPayload<{
-  include: {
-    articles: true;
-    topic: true;
-  };
-}>;
 
 const getAllDigests = cache(async () => {
   const allDigests = await prisma.digest.findMany({
@@ -126,7 +119,10 @@ export default async function DigestPage({
       <ConsensusAndConflict
         consensus={digestDetails.consensus}
         conflict={digestDetails.conflict}
-        articles={digestDetails.articles}
+        articles={digestDetails.articles.map((a) => ({
+          sourceId: a.sourceId,
+          url: a.url,
+        }))}
       />
 
       {/* Signal */}

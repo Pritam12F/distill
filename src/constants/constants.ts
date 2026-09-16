@@ -1,16 +1,6 @@
 // src/lib/constants.ts
 
-export type SourceType = "rss" | "newsapi";
-
-export type Source = {
-  type: SourceType;
-  value: string;
-};
-
-export type SuggestedTopic = {
-  name: string;
-  sources: Source[];
-};
+import { SuggestedTopic } from "@/types/topic";
 
 export const SUGGESTED_TOPICS: SuggestedTopic[] = [
   // ─── TECH ───────────────────────────────────────────────────────────

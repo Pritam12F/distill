@@ -1,23 +1,6 @@
 import { resend } from "@/lib/resend";
-import DigestEmail, { Article } from "@/emails/digest-email";
-
-export type SendEmail = {
-  userName: string;
-  userEmail: string;
-  emailTitle: string;
-  digests: {
-    topic: string;
-    topicId: string;
-    headline: string;
-    consensus: string;
-    conflict: string | null;
-    signal: string;
-    articles: Article[];
-  }[];
-  baseUrl: string;
-  date: string;
-  unsubscribeUrl: string;
-};
+import { DigestEmail } from "@/emails/digest-email";
+import { SendEmail } from "@/types/email";
 
 export async function sendDailyEmail(props: SendEmail) {
   try {

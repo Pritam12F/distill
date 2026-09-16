@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Globe } from "lucide-react";
-import { useCallback, useState } from "react";
+import { SubmitEvent, useCallback, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 export function AuthPage({ authType }: { authType: "signin" | "signup" }) {
   const [credentialsState, setCredentialsState] = useState<{
     email: string;
-    name?: string;
+    name: string;
     password: string;
   }>({
     email: "",
@@ -65,27 +65,34 @@ export function AuthPage({ authType }: { authType: "signin" | "signup" }) {
     [setCredentialsState],
   );
 
-  const loginHandler = useCallback(async () => {
-    const { data, error } = await authClient.signIn.email({
-      email: credentialsState.name!,
-      password: credentialsState.password,
-    });
+  const loginHandler = useCallback(
+    async (e: SubmitEvent<HTMLFormElement>) => {
+      e.preventDefault();
 
-    if (error) {
-      toast(error.message);
-      return;
-    }
+      const { data, error } = await authClient.signIn.email({
+        email: credentialsState.email,
+        password: credentialsState.password,
+      });
 
-    if (data) {
-      toast("Signed in");
-      navigate.push("/onboarding");
-    }
-  }, [credentialsState]);
+      if (error) {
+        toast(error.message);
+        return;
+      }
 
-  const signupHandler = useCallback(async () => {
+      if (data) {
+        toast("Signed in");
+        navigate.push("/onboarding");
+      }
+    },
+    [credentialsState],
+  );
+
+  const signupHandler = useCallback(async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
     const { data, error } = await authClient.signUp.email({
-      name: credentialsState.name!,
-      email: credentialsState.name!,
+      name: credentialsState.name,
+      email: credentialsState.email,
       password: credentialsState.password,
     });
 

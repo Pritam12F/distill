@@ -11,68 +11,16 @@ import { User } from "@prisma/client";
 import { buildTitlePrompt } from "@/utils/prompt-builder";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
-import { titleSummarySchema } from "@/zod/api";
+import { titleSummarySchema } from "@/zod/email";
 import { EMAIL_SUBJECT_SYSTEM_PROMPT } from "@/constants/prompts";
-
-type PipelineMessageType = {
-  success: boolean;
-  message: string;
-};
-
-type DigestRepoType = {
-  digestCount: number;
-  articleCount: number;
-  digests: {
-    id: string;
-    headline: string;
-    topicId: string;
-    articles: {
-      id: string;
-      title: string;
-      url: string;
-    }[];
-  }[];
-};
-
-export type TopicsType = {
-  id?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  userId?: string;
-  name: string;
-  sources?: string[];
-};
-
-export type CoreFailureType = {
-  message: string;
-  success: boolean;
-};
-
-export type CoreSuccessType = {
-  success: boolean;
-  message: string;
-  digestCount: number;
-  articleCount: number;
-  digests: {
-    topic: string;
-    articles: {
-      title: string;
-      id: string;
-      url: string;
-    }[];
-    id: string;
-    createdAt: Date;
-    headline: string;
-    consensus: string;
-    conflict: string | null;
-    signal: string;
-    topicId: string;
-  }[];
-};
-
-export type PiplelineFinalOutput =
-  | PipelineMessageType
-  | (PipelineMessageType & DigestRepoType)[];
+import {
+  CoreSuccessType,
+  PipelineMessageType,
+  PiplelineFinalOutput,
+  TopicsType,
+} from "@/types/pipeline";
+import { EmailDigest } from "@/types/email";
+import { errorDecoder } from "@/utils/error-decoder";
 
 export async function pipeline() {
   const users = await prisma.user.findMany({
@@ -83,9 +31,9 @@ export async function pipeline() {
     users.map(async (u) => await core(u.topics, u)),
   );
 
-  allUserDigests.forEach((d) => {
+  allUserDigests.forEach((d, i) => {
     if (d.status === "rejected") {
-      console.error(d.reason);
+      console.error(`Pipeline failed for digest number: ${i + 1}`);
     }
   });
 
@@ -96,14 +44,35 @@ export async function pipeline() {
 
 export async function core(
   topics: TopicsType[],
-  user: Partial<User>,
-): Promise<CoreFailureType | CoreSuccessType> {
+  user: Pick<User, "id" | "name" | "email">,
+): Promise<PipelineMessageType | CoreSuccessType> {
   try {
     const articles = await getArticles(topics);
 
+    if (!articles.length) {
+      return {
+        success: false,
+        message: "No articles could be fetched",
+      };
+    }
+
     const deduplicated = await removeDuplicates(articles, user.id);
 
+    if (!deduplicated.length) {
+      return {
+        success: false,
+        message: "No articles left after deduplication",
+      };
+    }
+
     const topArticles = await filterArticles(deduplicated);
+
+    if (!topArticles.length) {
+      return {
+        success: false,
+        message: "No articles left after filtration",
+      };
+    }
 
     const topicIdByName = new Map(topics.map((t) => [t.name, t.id]));
 
@@ -123,7 +92,10 @@ export async function core(
           // publishedAt is source metadata (not produced by the LLM), so join
           // it back onto each synthesised article by its source id.
           const publishedAtById = new Map(
-            a.articles.map((art) => [art.id, art.publishedAt ?? null]),
+            a.articles.map((art) => [
+              art.id,
+              art.publishedAt ? new Date(art.publishedAt) : new Date(),
+            ]),
           );
 
           return {
@@ -132,7 +104,7 @@ export async function core(
             ...generated,
             articles: generated.articles.map((art) => ({
               ...art,
-              publishedAt: publishedAtById.get(art.id) ?? null,
+              publishedAt: publishedAtById.get(art.id)!,
             })),
           };
         }
@@ -158,12 +130,11 @@ export async function core(
     if (!resolvedDigests.length) {
       return {
         success: false,
-        message:
-          "No digests to create — all articles were filtered out, already seen, or synthesis failed.",
+        message: "No digests were created — synthesis failed.",
       };
     }
 
-    const digestRepo = await addDigestsToRepo(user.id!, resolvedDigests);
+    const digestRepo = await addDigestsToRepo(user.id, resolvedDigests);
 
     if (!digestRepo.digestCount) {
       return {
@@ -173,16 +144,6 @@ export async function core(
     }
 
     const userPrompt = buildTitlePrompt(digestRepo.digests);
-
-    const structured = digestRepo.digests.map((d) => ({
-      topic: d.topic,
-      topicId: d.topicId,
-      headline: d.headline,
-      consensus: d.consensus,
-      signal: d.signal,
-      articles: d.articles,
-      conflict: d.conflict,
-    }));
 
     const { output } = await generateText({
       model: customOpenAI("gpt-5-nano"),
@@ -198,7 +159,7 @@ export async function core(
         userName: user.name!,
         userEmail: user.email!,
         emailTitle: output.name,
-        digests: structured,
+        digests: digestRepo.digests as EmailDigest[],
         unsubscribeUrl: "",
         baseUrl: process.env.BASE_URL!,
         date: new Date().toISOString().split("T")[0],
@@ -215,8 +176,7 @@ export async function core(
       message: "Digest was added to DB successfully",
     };
   } catch (e) {
-    const message =
-      e instanceof Error ? e.message : "Unknown pipeline error occured";
+    const message = errorDecoder(e);
 
     console.error(message);
 

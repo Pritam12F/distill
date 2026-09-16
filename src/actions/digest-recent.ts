@@ -1,6 +1,6 @@
 "use server";
 
-import { DigestCardProps } from "@/components/digest-card";
+import { DigestCardProps } from "@/types/digest";
 import { topicColors } from "@/constants/constants";
 import { prisma } from "@/lib/prisma";
 

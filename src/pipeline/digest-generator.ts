@@ -1,30 +1,8 @@
-import { z } from "zod";
 import { SYNTHESIS_SYSTEM_PROMPT } from "@/constants/prompts";
 import { buildSynthesisUserPrompt } from "@/utils/prompt-builder";
 import { generateText, Output } from "ai";
 import { customOpenAI } from "@/lib/custom-openai";
-
-export const synthesisSchema = z.object({
-  headline: z.string().max(120),
-  consensus: z.string(),
-  conflict: z.string().nullable(),
-  signal: z.string(),
-  articles: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      url: z.string().refine((val) => {
-        try {
-          new URL(val);
-          return true;
-        } catch {
-          return false;
-        }
-      }),
-      oneLine: z.string(),
-    }),
-  ),
-});
+import { synthesisSchema } from "@/zod/pipeline";
 
 export async function synthesiseDigest(
   topic: string,

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { DigestCard, DigestCardProps } from "./digest-card";
+import { DigestCard } from "./digest-card";
+import { DigestCardProps } from "@/types/digest";
 import { Button } from "./ui/button";
 import { AuthObjectType } from "@/types/auth";
 import { useCallback } from "react";

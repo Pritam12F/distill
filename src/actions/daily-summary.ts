@@ -2,22 +2,14 @@
 
 import { prisma } from "@/lib/prisma";
 import { errorDecoder } from "@/utils/error-decoder";
+import { DailySummaryResult } from "@/types/digest";
 import { DigestArticle } from "@prisma/client";
 
-export async function getDailySummary(): Promise<{
-  error?: string;
-  data?: {
-    topic: string;
-    articles: Pick<DigestArticle, "url" | "publishedAt" | "title">[];
-    conflict: string;
-    headline: string;
-    summaryPoints: string[];
-  };
-}> {
+export async function getDailySummary(): Promise<DailySummaryResult> {
   try {
     const result = await prisma.user.findFirst({
       where: {
-        email: "test_user@devzy.live",
+        email: "pritam.das.santuxd@gmail.com",
       },
       select: {
         digests: {
@@ -51,11 +43,10 @@ export async function getDailySummary(): Promise<{
       data: {
         topic: lastDigest?.topic.name!,
         headline: lastDigest?.headline!,
-        articles:
-          lastDigest?.articles.map((a) => ({
-            ...a,
-            oneLine: undefined,
-          })) ?? [],
+        articles: lastDigest?.articles as Pick<
+          DigestArticle,
+          "url" | "publishedAt" | "title"
+        >[],
         conflict: lastDigest?.conflict!,
         summaryPoints: lastDigest?.articles.map((a) => a.oneLine) ?? [],
       },

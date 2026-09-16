@@ -1,4 +1,4 @@
-import { ArticleWithTopic } from "../pipeline/deduplicate";
+import { ArticleWithTopic } from "@/types/pipeline";
 
 export function buildSynthesisUserPrompt(
   topic: string,
@@ -28,7 +28,7 @@ export function buildRelevancyUserPrompt(groups: ArticleWithTopic[]): string {
 Articles:
 ${articles
   .map(
-    (a, i) => `[S${i + 1}]
+    (a) => `[${a.id}]
 Title: ${a.title}
 Content: ${a.article.slice(0, 300)}`,
   )
