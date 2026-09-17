@@ -6,10 +6,10 @@ const DAY = 24 * 60 * 60 * 1000;
 const hoursAgo = (h: number) => new Date(Date.now() - h * 60 * 60 * 1000);
 
 async function seedDb() {
-  const firstSeed = prisma.$transaction(async (tx) => {
-    await tx.user.deleteMany({
+  const firstSeed = await prisma.$transaction(async (tx) => {
+    await tx.user.delete({
       where: {
-        email: { in: ["pritam@distill.local", "maya@distill.local"] },
+        email: "pritam.das.santuxd@gmail.com",
       },
     });
 
@@ -234,87 +234,6 @@ async function seedDb() {
         );
       }
     });
-  });
-
-  const secondSeed = prisma.$transaction(async (tx) => {
-    const maya = await tx.user.create({
-      data: {
-        email: "maya@distill.local",
-        name: "Maya",
-        emailVerified: true,
-        topics: {
-          create: [
-            {
-              name: "Geopolitics",
-              sources: [
-                "https://foreignpolicy.com/feed/",
-                "https://www.foreignaffairs.com/rss.xml",
-              ],
-            },
-            {
-              // Same topic name as Pritam. The @@unique is on [userId, name],
-              // so this is allowed — worth confirming it doesn't collide.
-              name: "Artificial intelligence",
-              sources: ["https://www.technologyreview.com/feed/"],
-            },
-          ],
-        },
-      },
-      include: { topics: { orderBy: { createdAt: "asc" } } },
-    });
-
-    const [geo] = maya.topics;
-
-    const d1 = await tx.digest.create({
-      data: {
-        userId: maya.id,
-        topicId: geo.id,
-        headline: "Export controls are reshaping semiconductor supply chains",
-        consensus:
-          "Both sources describe the same shift: manufacturers are duplicating capacity across jurisdictions rather than optimising for cost. [S1][S2]",
-        conflict: null,
-        signal:
-          "Expect lead times to lengthen before they shorten, even as total capacity rises.",
-        articles: {
-          create: [
-            {
-              userId: maya.id,
-              sourceId: "S1",
-              title: "The quiet reindustrialisation of chip manufacturing",
-              url: "https://foreignpolicy.com/example-one",
-              oneLine: "The structural argument, with the capacity numbers.",
-              publishedAt: hoursAgo(7),
-              reaction: null,
-            },
-            {
-              userId: maya.id,
-              sourceId: "S2",
-              title: "Duplication is the new efficiency",
-              url: "https://foreignaffairs.com/example-two",
-              oneLine: "Why firms are accepting higher costs on purpose.",
-              publishedAt: hoursAgo(15),
-              reaction: null,
-            },
-          ],
-        },
-      },
-      include: {
-        articles: {
-          select: {
-            url: true,
-            title: true,
-          },
-        },
-      },
-    });
-  });
-
-  const result = await Promise.allSettled([firstSeed, secondSeed]);
-
-  result.forEach((p, i) => {
-    if (p.status === "rejected") {
-      console.error(`Transaction no: ${i + 1} failed - ${p.reason}`);
-    }
   });
 }
 

@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { EMAIL_SUBJECT_SYSTEM_PROMPT } from "@/constants/prompts";
 import { sendDailyEmail } from "../pipeline/email";
 import { v4 as uuid } from "uuid";
+import { errorDecoder } from "@/utils/error-decoder";
 
 // Only run after seed script has been run once
 
@@ -127,6 +128,6 @@ manualPipeline()
     process.exit(0);
   })
   .catch((err) => {
-    console.error(err instanceof Error ? err.message : "Some error occured");
+    console.error(errorDecoder(err));
     process.exit(1);
   });
