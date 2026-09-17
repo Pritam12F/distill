@@ -9,6 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 
 type AccountMenuProps = {
   name?: string | null;
@@ -17,6 +20,7 @@ type AccountMenuProps = {
 
 export function AccountMenu({ name, email }: AccountMenuProps) {
   const initial = name?.trim()?.[0]?.toUpperCase() ?? "A";
+  const navigate = useRouter();
 
   const itemClass =
     "flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[#4A423A] focus:bg-[#F0E8DA] focus:text-[#1A1714] dark:text-[#A69A8B] dark:focus:bg-[#221D17] dark:focus:text-[#F3EDE3]";
@@ -69,7 +73,19 @@ export function AccountMenu({ name, email }: AccountMenuProps) {
 
         <DropdownMenuSeparator className="my-1 bg-[#DCD2C2] dark:bg-[#332C24]" />
 
-        <DropdownMenuItem className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[#8A3A24] focus:bg-[#F7E7E1] focus:text-[#8A3A24] dark:text-[#D98A70] dark:focus:bg-[#2A1A15] dark:focus:text-[#D98A70]">
+        <DropdownMenuItem
+          onClick={async () => {
+            await authClient.signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  toast.info("Logged out", { duration: 500 });
+                  navigate.push("/");
+                },
+              },
+            });
+          }}
+          className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[#8A3A24] focus:bg-[#F7E7E1] focus:text-[#8A3A24] dark:text-[#D98A70] dark:focus:bg-[#2A1A15] dark:focus:text-[#D98A70]"
+        >
           <LogOut className="size-4" />
           Log out
         </DropdownMenuItem>

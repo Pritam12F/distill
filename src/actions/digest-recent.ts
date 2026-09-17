@@ -1,5 +1,3 @@
-"use server";
-
 import { DigestCardProps, GetDigestsErrorType } from "@/types/digest";
 import { topicColors } from "@/constants/constants";
 import { prisma } from "@/lib/prisma";
