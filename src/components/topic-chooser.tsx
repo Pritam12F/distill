@@ -95,6 +95,33 @@ export function TopicChooser({ selectedIndices }: TopicChooserProps) {
     [setSelectedIndexes, selectedIndices, logicHandler],
   );
 
+  const handleBriefing = useCallback(
+    async (e: MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      const fullTopics = SUGGESTED_TOPICS.filter((_t, i) =>
+        selectedIndexes.includes(i),
+      ).map(({ name, sources }) => ({
+        name,
+        sources,
+      }));
+
+      const onBoardedResult = await onBoardUser(fullTopics);
+
+      if (onBoardedResult.success && onBoardedResult.message) {
+        toast(onBoardedResult.message, { duration: 1000 });
+        navigate.push("/");
+        return;
+      }
+
+      if (!onBoardedResult.success && onBoardedResult.message) {
+        toast.error(onBoardedResult.message, { duration: 1000 });
+      }
+    },
+    [selectedIndexes],
+  );
+
   return (
     <Fragment>
       {/* Topic chips */}
@@ -128,30 +155,12 @@ export function TopicChooser({ selectedIndices }: TopicChooserProps) {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between border-t border-[#DCD2C2] dark:border-[#332C24] pt-6">
           <span className="text-sm text-[#6E645A] dark:text-[#A69A8B]">
-            3 of 5 selected
+            {selectedIndexes.length} of 5 selected
           </span>
           <button
             type="button"
             disabled={false}
-            onClick={async (e) => {
-              e.stopPropagation();
-              e.preventDefault();
-
-              const fullTopics = SUGGESTED_TOPICS.filter((_t, i) =>
-                selectedIndexes.includes(i),
-              ).map(({ name, sources }) => ({
-                name,
-                sources,
-              }));
-
-              const onBoardedResult = await onBoardUser(fullTopics);
-
-              if (onBoardedResult && onBoardedResult.success) {
-                toast(onBoardedResult.message);
-
-                navigate.push("/");
-              }
-            }}
+            onClick={handleBriefing}
             className="rounded-full px-6 py-2.5 text-sm font-medium bg-[#755815] text-[#FBF6EE] hover:bg-[#5F4711] dark:bg-[#D9A441] dark:text-[#14110E] dark:hover:bg-[#C4932F] transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:focus-visible:ring-[#D9A441] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FBF6EE] dark:focus-visible:ring-offset-[#14110E]"
           >
             Start my briefing

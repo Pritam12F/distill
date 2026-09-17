@@ -15,7 +15,7 @@ async function seedDb() {
 
     const pritam = await tx.user.create({
       data: {
-        email: "pritam@distill.local",
+        email: "pritam.das.santuxd@gmail.com",
         name: "Pritam",
         emailVerified: true,
         topics: {

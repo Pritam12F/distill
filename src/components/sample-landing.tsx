@@ -2,7 +2,6 @@
 
 import { useLanding } from "@/hooks/use-landing";
 import { formatDateShortHand } from "@/utils/format-date";
-import { getInitials } from "@/utils/get-initals";
 import { Check } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";

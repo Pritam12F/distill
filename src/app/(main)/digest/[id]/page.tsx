@@ -1,48 +1,14 @@
+import "dotenv/config";
 import ConsensusAndConflict from "@/components/consensus-conflict";
 import DigestShare from "@/components/digest-share";
 import { ReactionsSection } from "@/components/reaction";
-import { prisma } from "@/lib/prisma";
-import { Digest, DigestArticle, Topic, User } from "@prisma/client";
 import { notFound } from "next/navigation";
-import "dotenv/config";
 import { BASE_URL, topicColors } from "@/constants/constants";
 import type { Metadata, ResolvingMetadata } from "next";
-import { cache } from "react";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getDigest } from "@/actions/fetch-digest";
+import { getSession } from "@/lib/auth";
 
-const getAllDigests = cache(async () => {
-  const allDigests = await prisma.digest.findMany({
-    include: {
-      articles: true,
-      topic: {
-        select: {
-          name: true,
-          user: {
-            select: {
-              topics: {
-                select: {
-                  id: true,
-                },
-              },
-            },
-          },
-          id: true,
-        },
-      },
-    },
-  });
-
-  const digestLookup = new Map<string, Record<string, any>>();
-
-  allDigests.forEach((d) => {
-    if (!digestLookup.has(d.id)) {
-      digestLookup.set(d.id, d);
-    }
-  });
-
-  return digestLookup;
-});
+export const revalidate = 3600;
 
 export const generateMetadata = async (
   {
@@ -54,13 +20,21 @@ export const generateMetadata = async (
 ): Promise<Metadata> => {
   const { id } = await params;
 
-  const digestDetails = (await getAllDigests()).get(id);
-
+  const digestDetails = await getDigest(id);
   const prevData = await parent;
 
+  if (!digestDetails) {
+    return {
+      title: prevData.title,
+      description: prevData.description,
+    };
+  }
+
+  const { headline, signal } = digestDetails.digest;
+
   return {
-    title: digestDetails?.headline ?? prevData.title,
-    description: digestDetails?.signal ?? prevData.description,
+    title: headline ?? prevData.title,
+    description: signal ?? prevData.description,
   };
 };
 
@@ -71,23 +45,27 @@ export default async function DigestPage({
 }) {
   const { id } = await params;
 
-  const digestDetails = (await getAllDigests()).get(id) as Digest & {
-    articles: DigestArticle[];
-    topic: Topic & { user: Partial<User> & { topics: Partial<Topic>[] } };
-  };
-
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  const isOwner = session ? session.user.id === digestDetails.userId : false;
+  const digestDetails = await getDigest(id);
 
   if (!digestDetails) {
     return notFound();
   }
 
-  const topicIdx = digestDetails.topic.user.topics.findIndex(
-    (t) => t.id === digestDetails.topic.id,
+  const {
+    id: digestId,
+    topic,
+    headline,
+    createdAt,
+    articles,
+    conflict,
+    consensus,
+    signal,
+  } = digestDetails.digest;
+
+  const session = await getSession();
+  const isOwner = session ? session.user.id === digestId : false;
+  const topicIdx = digestDetails.ownerTopics.findIndex(
+    (t) => t.id === topic.id,
   );
 
   return (
@@ -99,27 +77,27 @@ export default async function DigestPage({
             topicColors[topicIdx]
           }`}
         >
-          {digestDetails.topic.name}
+          {topic.name}
         </span>
 
         <h1 className="mt-5 font-serif text-4xl leading-[1.1] tracking-tight text-balance sm:text-[42px]">
-          {digestDetails.headline}
+          {headline}
         </h1>
 
         <p className="mt-5 text-sm text-[#6E645A] dark:text-[#A69A8B]">
-          {digestDetails.createdAt.toLocaleDateString("en-GB", {
+          {createdAt.toLocaleDateString("en-GB", {
             day: "numeric",
             month: "short",
             year: "numeric",
           })}
-          — synthesised from {digestDetails.articles.length} sources
+          — synthesised from {articles.length} sources
         </p>
       </header>
 
       <ConsensusAndConflict
-        consensus={digestDetails.consensus}
-        conflict={digestDetails.conflict}
-        articles={digestDetails.articles.map((a) => ({
+        consensus={consensus}
+        conflict={conflict}
+        articles={articles.map((a) => ({
           sourceId: a.sourceId,
           url: a.url,
         }))}
@@ -131,7 +109,7 @@ export default async function DigestPage({
           The signal
         </h2>
         <p className="mt-3 text-[17px] leading-8 text-[#2F3B29] dark:text-[#CBDCC2]">
-          {digestDetails.signal}
+          {signal}
         </p>
       </section>
 
@@ -142,7 +120,7 @@ export default async function DigestPage({
         </h2>
 
         <ul className="mt-5">
-          {digestDetails.articles.map((source, i) => (
+          {articles.map((source, i) => (
             <li
               key={source.sourceId}
               id={`source-${source.sourceId}`}

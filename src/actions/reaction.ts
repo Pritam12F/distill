@@ -1,11 +1,10 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { errorDecoder } from "@/utils/error-decoder";
 import { Reaction } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 
 export type UpdateReactionActionType = {
   reaction: Reaction | null;
@@ -16,9 +15,7 @@ export async function updateReaction({
   reaction,
   articleId,
 }: UpdateReactionActionType) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session || !session.user) {
     throw new Error("User not authenticated");
@@ -46,7 +43,5 @@ export async function updateReaction({
     const message = errorDecoder(err, "Error updating reaction");
 
     console.error(message);
-
-    throw new Error(message);
   }
 }

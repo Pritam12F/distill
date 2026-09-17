@@ -1,16 +1,15 @@
 import { getDigests } from "@/actions/digest-recent";
 import { Landing } from "@/components/landing";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { HomePage } from "@/components/home";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
 
+export const revalidate = 3600;
+
 export default async function Home() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session || !session.user.id) {
     return <Landing />;

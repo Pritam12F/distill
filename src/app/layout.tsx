@@ -3,8 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { Toaster } from "sonner";
 import NavbarWrapper from "@/components/navbar";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/auth";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -32,11 +31,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const authObj = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const authObj = await getSession();
 
-  const authenticated = Boolean(authObj?.session);
   return (
     <html
       lang="en"

@@ -1,10 +1,10 @@
 "use server";
 
 import { type Source } from "@/types/topic";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { errorDecoder } from "@/utils/error-decoder";
 
 export const onBoardUser = async (
   topics: { name: string; sources: Source[] }[],
@@ -12,9 +12,7 @@ export const onBoardUser = async (
   message?: string;
   success: boolean;
 }> => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session) {
     return {
@@ -39,11 +37,13 @@ export const onBoardUser = async (
         data: topics.map((t) => ({
           userId: session.user.id,
           name: t.name,
-          sources: t.sources.map((s) => s.value),
+          sources: t.sources
+            .filter((s) => s.type === "rss")
+            .map((r) => r.value),
         })),
       });
 
-      return (await topicsAdded).count ? true : false;
+      return (await topicsAdded).count > 0 ? true : false;
     });
 
     if (promise) {
@@ -60,12 +60,11 @@ export const onBoardUser = async (
           success: false,
         };
   } catch (err) {
-    console.error(
-      err instanceof Error ? err.message : "couldn't on board uers",
-    );
+    const errMsg = errorDecoder(err, "couldn't on board uers");
+    console.error(errMsg);
 
     return {
-      message: err instanceof Error ? err.message : "couldn't on board uers",
+      message: errMsg,
       success: false,
     };
   }

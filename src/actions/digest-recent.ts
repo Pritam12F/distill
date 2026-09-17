@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { Digest } from "@prisma/client";
 import { errorDecoder } from "@/utils/error-decoder";
 
+const MAX_TOPICS_PER_USER = 10;
+
 function reorder(
   digests: (Digest & {
     _count: { articles: number };
@@ -23,7 +25,9 @@ function reorder(
     date: m.createdAt.toISOString().split("T")[0],
     hasRead: m.hasRead,
     accentIndex:
-      [m.topic.name].reduce((acc, curr) => acc + curr.charCodeAt(0), 0) %
+      m.topic.name
+        .split("")
+        .reduce((acc, curr) => acc + curr.charCodeAt(0), 0) %
       topicColors.length,
     sourceCount: m._count.articles,
   }));
@@ -55,8 +59,6 @@ export async function getDigests(userId: string): Promise<
       };
     }
 
-    const maxQueryLimit = userTopics.topics.length * 6;
-
     const sortedDigests = await prisma.digest.findMany({
       where: {
         userId,
@@ -76,15 +78,9 @@ export async function getDigests(userId: string): Promise<
           },
         },
       },
-      take: maxQueryLimit,
+      take: MAX_TOPICS_PER_USER,
     });
 
-    if (!sortedDigests.length) {
-      return {
-        currDigests: [],
-        prevDigests: [],
-      };
-    }
     const dateMap = new Map<string, typeof sortedDigests>();
 
     sortedDigests.forEach((d) => {
@@ -100,20 +96,11 @@ export async function getDigests(userId: string): Promise<
       date.push(d);
     });
 
-    const entries = dateMap.entries();
-
-    let relevant = Array.from(entries).slice(0, 2);
-
-    if (relevant.length === 1) {
-      return {
-        currDigests: reorder(relevant[0][1]),
-        prevDigests: [],
-      };
-    }
+    const groups = Array.from(dateMap.values());
 
     return {
-      currDigests: [],
-      prevDigests: reorder(relevant[1][1]),
+      currDigests: groups[0] ? reorder(groups[0]) : [],
+      prevDigests: groups[1] ? reorder(groups[1]) : [],
     };
   } catch (e) {
     const errMsg = errorDecoder(e, "Error fetching recent digests");

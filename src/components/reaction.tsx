@@ -3,6 +3,7 @@
 import { updateReaction } from "@/actions/reaction";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { startTransition, useOptimistic } from "react";
+import { toast } from "sonner";
 
 export const ReactionsSection = ({
   sourceId,
@@ -26,7 +27,9 @@ export const ReactionsSection = ({
         articleId,
       });
 
-      if (updated.success) console.log("reaction updated successfully");
+      if (updated && updated.success) {
+        toast("Reaction updated successfully", { duration: 700 });
+      }
     });
   };
 
