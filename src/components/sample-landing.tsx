@@ -1,6 +1,8 @@
 "use client";
 
 import { useLanding } from "@/hooks/use-landing";
+import { formatDateShortHand } from "@/utils/format-date";
+import { getInitials } from "@/utils/get-initals";
 import { Check } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -18,26 +20,35 @@ export function SampleArticles() {
     <div className="w-full space-y-3 lg:max-w-sm">
       {articles &&
         articles.length > 0 &&
-        articles.map((item) => (
-          <div
-            key={item.title}
-            className="flex items-start gap-3 rounded-2xl border border-[#FBF6EE]/20 bg-[#FBF6EE]/10 p-4 backdrop-blur-sm dark:border-[#F3EDE3]/20 dark:bg-[#F3EDE3]/10"
-          >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FBF6EE]/20 text-[11px] font-medium dark:bg-[#F3EDE3]/20">
-              {item.initials}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] uppercase tracking-[0.14em] opacity-70">
-                {item.source}
-              </p>
-              <p className="mt-1 text-sm leading-5">{item.title}</p>
+        articles.map((item) => {
+          const published = formatDateShortHand(item.publishedAt);
+
+          return (
+            <div
+              key={item.id ?? item.source ?? item.title}
+              className="flex items-start gap-3 rounded-2xl border border-[#FBF6EE]/20 bg-[#FBF6EE]/10 p-4 backdrop-blur-sm dark:border-[#F3EDE3]/20 dark:bg-[#F3EDE3]/10"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FBF6EE]/20 text-[11px] font-medium dark:bg-[#F3EDE3]/20">
+                {item.initials}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] uppercase tracking-[0.14em] opacity-70">
+                  {item.source}
+                </p>
+                <p className="mt-1 line-clamp-2 text-sm leading-5">
+                  {item.title}
+                </p>
+              </div>
+
+              {published && (
+                <span className="shrink-0 rounded-full bg-[#FBF6EE]/15 px-2.5 py-1 text-[11px] dark:bg-[#F3EDE3]/15">
+                  {published}
+                </span>
+              )}
             </div>
-            <span className="shrink-0 rounded-full bg-[#FBF6EE]/15 px-2.5 py-1 text-[11px] dark:bg-[#F3EDE3]/15">
-              {item.time}
-            </span>
-          </div>
-        ))}
-      {articles && articles.length <= 0 && <p>No sample summary was found</p>}
+          );
+        })}
     </div>
   );
 }

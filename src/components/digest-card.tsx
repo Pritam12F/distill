@@ -10,7 +10,7 @@ export function DigestCard({
   sourceCount,
   hasConflict,
   date,
-  isUnread = false,
+  hasRead,
   accentIndex,
 }: DigestCardProps) {
   const chipStyle = topicColors[accentIndex % topicColors.length];
@@ -19,9 +19,9 @@ export function DigestCard({
     <Link
       href={`/digest/${id}`}
       className={`block rounded-2xl border border-[#DCD2C2] bg-[#FBF6EE] p-4 transition-transform duration-200 hover:-translate-y-0.5 dark:border-[#332C24] dark:bg-[#14110E] ${
-        isUnread
-          ? "rounded-l-none border-l-2 border-l-[#755815] dark:border-l-[#D9A441]"
-          : ""
+        hasRead
+          ? ""
+          : "rounded-l-none border-l-2 border-l-[#755815] dark:border-l-[#D9A441]"
       }`}
     >
       <div className="flex items-center justify-between gap-3">

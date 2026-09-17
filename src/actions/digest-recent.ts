@@ -1,72 +1,126 @@
 "use server";
 
-import { DigestCardProps } from "@/types/digest";
+import { DigestCardProps, GetDigestsErrorType } from "@/types/digest";
 import { topicColors } from "@/constants/constants";
 import { prisma } from "@/lib/prisma";
+import { Digest } from "@prisma/client";
+import { errorDecoder } from "@/utils/error-decoder";
 
-export async function getDigests(
-  userId: string,
-): Promise<{ currDigests: DigestCardProps[]; prevDigests: DigestCardProps[] }> {
-  const timeNow = new Date();
-  timeNow.setUTCHours(0, 0, 0, 0);
-  const yesterday = new Date(timeNow.getTime() - 86_400_000);
-  const tomorrow = new Date(timeNow.getTime() + 86_400_000);
+function reorder(
+  digests: (Digest & {
+    _count: { articles: number };
+    topic: {
+      name: string;
+    };
+  })[],
+) {
+  return digests.map((m) => ({
+    id: m.id,
+    topic: m.topic.name,
+    headline: m.headline,
+    consensus: m.consensus,
+    hasConflict: m.conflict,
+    date: m.createdAt.toISOString().split("T")[0],
+    hasRead: m.hasRead,
+    accentIndex:
+      [m.topic.name].reduce((acc, curr) => acc + curr.charCodeAt(0), 0) %
+      topicColors.length,
+    sourceCount: m._count.articles,
+  }));
+}
 
-  const sortedDigests = await prisma.digest.findMany({
-    where: {
-      userId,
-      createdAt: {
-        gte: yesterday,
-        lt: tomorrow,
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      topic: true,
-      _count: {
-        select: {
-          articles: true,
+export async function getDigests(userId: string): Promise<
+  | {
+      currDigests: DigestCardProps[];
+      prevDigests: DigestCardProps[];
+    }
+  | GetDigestsErrorType
+> {
+  try {
+    const userTopics = await prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        topics: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  const currDigests = sortedDigests
-    .filter((d) => d.createdAt >= timeNow && d.createdAt < tomorrow)
-    .map((m, i) => ({
-      id: m.id,
-      topic: m.topic.name,
-      headline: m.headline,
-      consensus: m.consensus,
-      hasConflict: m.conflict,
-      date: m.createdAt.toISOString().split("T")[0],
-      isUnread: true,
-      accentIndex:
-        [m.topic.name].reduce((acc, curr) => acc + curr.charCodeAt(0), 0) %
-        topicColors.length,
-      sourceCount: m._count.articles,
-    }));
+    if (!userTopics || !userTopics.topics.length) {
+      return {
+        error: "No user or topics found for this id",
+      };
+    }
 
-  const prevDigests = sortedDigests
-    .filter((d) => d.createdAt >= yesterday && d.createdAt < timeNow)
-    .map((m, i) => ({
-      id: m.id,
-      topic: m.topic.name,
-      headline: m.headline,
-      consensus: m.consensus,
-      hasConflict: m.conflict,
-      date: m.createdAt.toISOString().split("T")[0],
-      isUnread: true,
-      accentIndex:
-        [m.topic.name].reduce((acc, curr) => acc + curr.charCodeAt(0), 0) %
-        topicColors.length,
-      sourceCount: m._count.articles,
-    }));
+    const maxQueryLimit = userTopics.topics.length * 6;
 
-  return {
-    currDigests,
-    prevDigests,
-  };
+    const sortedDigests = await prisma.digest.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        topic: {
+          select: {
+            name: true,
+          },
+        },
+        _count: {
+          select: {
+            articles: true,
+          },
+        },
+      },
+      take: maxQueryLimit,
+    });
+
+    if (!sortedDigests.length) {
+      return {
+        currDigests: [],
+        prevDigests: [],
+      };
+    }
+    const dateMap = new Map<string, typeof sortedDigests>();
+
+    sortedDigests.forEach((d) => {
+      const createdAt = d.createdAt.toISOString().split("T")[0];
+
+      const date = dateMap.get(createdAt);
+
+      if (!date) {
+        dateMap.set(createdAt, [d]);
+        return;
+      }
+
+      date.push(d);
+    });
+
+    const entries = dateMap.entries();
+
+    let relevant = Array.from(entries).slice(0, 2);
+
+    if (relevant.length === 1) {
+      return {
+        currDigests: reorder(relevant[0][1]),
+        prevDigests: [],
+      };
+    }
+
+    return {
+      currDigests: [],
+      prevDigests: reorder(relevant[1][1]),
+    };
+  } catch (e) {
+    const errMsg = errorDecoder(e, "Error fetching recent digests");
+    console.error(errMsg);
+
+    return {
+      error: errMsg,
+    };
+  }
 }

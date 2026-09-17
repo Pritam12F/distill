@@ -12,6 +12,8 @@
     "schedule": "npx tsx src/scripts/cron.ts",
     "pipeline": "npx tsx src/scripts/manual-pipeline.ts",
     "db:seed": "npx tsx prisma/seed.ts",
+    "migrate": "npx prisma migrate dev",
+    "generate": "npx prisma generate",
     "db:studio": "npx prisma studio",
     "add:testuser": "npx tsx src/scripts/add-test-user.ts"
   },

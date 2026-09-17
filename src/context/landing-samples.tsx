@@ -1,9 +1,8 @@
 "use client";
 
 import { getDailySummary } from "@/actions/daily-summary";
-import { getMetadata } from "@/utils/microlink";
 import {
-  LandingSampleType,
+  DailySummaryResult,
   SampleArticleType,
   SampleOtherDataType,
 } from "@/types/digest";
@@ -12,7 +11,7 @@ import { createContext, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const LandingSampleContext = createContext<
-  LandingSampleType | undefined
+  (DailySummaryResult & { error?: string }) | undefined
 >(undefined);
 
 export const LandingContextProvider = ({
@@ -35,17 +34,7 @@ export const LandingContextProvider = ({
     }
 
     if (data && data.articles.length > 0) {
-      const articles = await Promise.all(
-        data.articles.map(async (a) => {
-          const websiteName = await getMetadata(a.url);
-          return {
-            source: a.url,
-            initials: websiteName.data?.title?.toString()[0] ?? "U",
-            title: a.title ?? "Unknown",
-            time: a.publishedAt?.toDateString(),
-          };
-        }),
-      );
+      const articles = data.articles;
 
       const otherData = {
         conflict: data.conflict,

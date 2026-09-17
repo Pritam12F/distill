@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { HomePage } from "@/components/home";
 import { redirect } from "next/navigation";
+import { toast } from "sonner";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -23,12 +24,18 @@ export default async function Home() {
 
   if (topics === 0) redirect("/onboarding");
 
-  const { currDigests, prevDigests } = await getDigests(session.user.id);
+  const results = await getDigests(session.user.id);
+
+  if ("error" in results) {
+    toast.error(results.error, { duration: 1000 });
+
+    return <Landing />;
+  }
 
   return (
     <HomePage
-      currDigests={currDigests}
-      prevDigests={prevDigests}
+      currDigests={results.currDigests}
+      prevDigests={results.prevDigests}
       auth={session}
     />
   );

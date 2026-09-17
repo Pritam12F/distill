@@ -49,6 +49,7 @@ model Digest {
   consensus String
   conflict  String?
   signal    String
+  hasRead   Boolean?        @default(false)
   articles  DigestArticle[]
   userId    String
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -100,6 +100,7 @@ export async function core(
 
           return {
             topic: a.topic,
+            hasRead: false,
             topicId: topicIdByName.get(a.topic)!,
             ...generated,
             articles: generated.articles.map((art) => ({

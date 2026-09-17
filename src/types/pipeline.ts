@@ -72,6 +72,7 @@ export type CoreSuccessType = {
     conflict: string | null;
     signal: string;
     topicId: string;
+    hasRead: boolean | null;
   }[];
 };
 

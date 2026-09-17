@@ -7,15 +7,16 @@ export type DigestCardProps = {
   sourceCount: number;
   hasConflict?: string | null;
   date: string; // "Jun 10" or "Today"
-  isUnread?: boolean;
+  hasRead: boolean | null;
   accentIndex: number; // 0-4, picks the topic chip color
 };
 
-export type SampleArticleType = {
+export type SampleArticleType = Pick<
+  DigestArticle,
+  "publishedAt" | "title" | "id"
+> & {
+  initials?: string;
   source: string;
-  initials: string;
-  title: string;
-  time: string;
 };
 
 export type SampleOtherDataType = {
@@ -25,16 +26,12 @@ export type SampleOtherDataType = {
   topic: string;
 };
 
-export type LandingSampleType = {
-  error?: string;
+export type DailySummaryResult = {
   data?: SampleOtherDataType & {
     articles: SampleArticleType[];
   };
 };
 
-export type DailySummaryResult = {
-  error?: string;
-  data?: SampleOtherDataType & {
-    articles: Pick<DigestArticle, "url" | "publishedAt" | "title">[];
-  };
+export type GetDigestsErrorType = {
+  error: string;
 };

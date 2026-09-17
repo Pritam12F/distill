@@ -3,9 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { errorDecoder } from "@/utils/error-decoder";
 import { DailySummaryResult } from "@/types/digest";
-import { DigestArticle } from "@prisma/client";
+import { getMetadata } from "@/utils/microlink";
+import { getInitials } from "@/utils/get-initals";
 
-export async function getDailySummary(): Promise<DailySummaryResult> {
+export async function getDailySummary(): Promise<
+  { error?: string; source?: string } & DailySummaryResult
+> {
   try {
     const result = await prisma.user.findFirst({
       where: {
@@ -16,9 +19,11 @@ export async function getDailySummary(): Promise<DailySummaryResult> {
           orderBy: {
             createdAt: "desc",
           },
+          take: 1,
           select: {
             articles: {
               select: {
+                id: true,
                 url: true,
                 title: true,
                 publishedAt: true,
@@ -34,19 +39,42 @@ export async function getDailySummary(): Promise<DailySummaryResult> {
             conflict: true,
           },
         },
+        name: true,
       },
     });
 
+    if (!result) {
+      return {
+        error: "No demo user found",
+      };
+    }
+
     const lastDigest = result?.digests[0];
+
+    if (!lastDigest) {
+      return {
+        error: `No digest found for this user: ${result.name}`,
+      };
+    }
+
+    const articles = await Promise.all(
+      lastDigest?.articles.map(async (a) => {
+        const sourceName = (await getMetadata(a.url)).data?.publisher!;
+        return {
+          id: a.id,
+          title: a.title,
+          source: sourceName,
+          publishedAt: a.publishedAt,
+          initials: getInitials(sourceName),
+        };
+      }),
+    );
 
     return {
       data: {
         topic: lastDigest?.topic.name!,
         headline: lastDigest?.headline!,
-        articles: lastDigest?.articles as Pick<
-          DigestArticle,
-          "url" | "publishedAt" | "title"
-        >[],
+        articles,
         conflict: lastDigest?.conflict!,
         summaryPoints: lastDigest?.articles.map((a) => a.oneLine) ?? [],
       },

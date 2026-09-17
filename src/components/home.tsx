@@ -5,7 +5,7 @@ import { DigestCard } from "./digest-card";
 import { DigestCardProps } from "@/types/digest";
 import { Button } from "./ui/button";
 import { AuthObjectType } from "@/types/auth";
-import { useCallback } from "react";
+import { Fragment, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { generateFirstDigest } from "@/actions/generate-first";
 
@@ -16,6 +16,15 @@ type HomePageProps = {
 };
 
 export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
+  const { todayDate, yesterdayDate } = useMemo(() => {
+    const todayDate = new Date();
+    const yesterdayDate = new Date(todayDate.getDate() - 1);
+    return {
+      todayDate,
+      yesterdayDate,
+    };
+  }, [currDigests, prevDigests, auth]);
+
   const onGenerate = useCallback(async () => {
     if (currDigests.length > 0) {
       toast("You already have digests!");
@@ -33,16 +42,13 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
     if (error) {
       toast.error(error.reason, {
         toasterId: toastId,
+        duration: 500,
       });
-
-      toast.dismiss(toastId);
-
       return;
     }
 
     if (data) {
-      toast(data.message, { toasterId: toastId });
-      toast.dismiss(toastId);
+      toast(data.message, { toasterId: toastId, duration: 700 });
     }
   }, [auth, currDigests]);
 
@@ -50,10 +56,6 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
     <div className="min-h-screen bg-[#FBF6EE] p-8 dark:bg-[#14110E]">
       <div className="mx-auto flex max-w-2xl flex-col gap-10">
         <section className="flex flex-col gap-3">
-          <span className="text-[11px] uppercase tracking-[0.16em] text-[#6E645A] dark:text-[#A69A8B]">
-            Today
-          </span>
-
           {currDigests.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-lg border border-[#DCD2C2] bg-[#F0E8DA] px-6 py-16 text-center dark:border-[#332C24] dark:bg-[#221D17]">
               <h2 className="font-serif tracking-tight text-xl text-[#1A1714] dark:text-[#F3EDE3]">
@@ -84,7 +86,17 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
           ) : (
             <div className="flex flex-col gap-3">
               {currDigests.map((digestProps) => {
-                return <DigestCard key={digestProps.id} {...digestProps} />;
+                return (
+                  <Fragment>
+                    <span className="text-[11px] uppercase tracking-[0.16em] text-[#6E645A] dark:text-[#A69A8B]">
+                      {todayDate.toISOString().split("T")[0] ===
+                      currDigests[0].date
+                        ? "Today"
+                        : currDigests[0].date}
+                    </span>
+                    <DigestCard key={digestProps.id} {...digestProps} />
+                  </Fragment>
+                );
               })}
             </div>
           )}
@@ -93,7 +105,9 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
         {prevDigests.length > 0 && (
           <section className="flex flex-col gap-3">
             <span className="text-[11px] uppercase tracking-[0.16em] text-[#6E645A] dark:text-[#A69A8B]">
-              Yesterday
+              {yesterdayDate.toISOString().split("T")[0] === prevDigests[0].date
+                ? "Yesterday"
+                : currDigests[0].date}
             </span>
             <div className="flex flex-col gap-3 opacity-60">
               {prevDigests.map((digestCardProps) => {
