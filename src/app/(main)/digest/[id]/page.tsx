@@ -7,6 +7,7 @@ import { BASE_URL, topicColors } from "@/constants/constants";
 import type { Metadata, ResolvingMetadata } from "next";
 import { getDigest } from "@/actions/fetch-digest";
 import { getSession } from "@/lib/auth";
+import { markAsRead } from "@/actions/mark-as-read";
 
 export const revalidate = 3600;
 
@@ -54,6 +55,7 @@ export default async function DigestPage({
   const {
     id: digestId,
     topic,
+    hasRead,
     headline,
     createdAt,
     articles,
@@ -64,6 +66,11 @@ export default async function DigestPage({
 
   const session = await getSession();
   const isOwner = session ? session.user.id === digestId : false;
+
+  if (!hasRead && isOwner) {
+    await markAsRead(digestId);
+  }
+
   const topicIdx = digestDetails.ownerTopics.findIndex(
     (t) => t.id === topic.id,
   );
