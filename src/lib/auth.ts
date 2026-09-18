@@ -3,7 +3,6 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { headers } from "next/headers";
-import { cache } from "react";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
