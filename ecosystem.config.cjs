@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 module.exports = {
   apps: [
     {
