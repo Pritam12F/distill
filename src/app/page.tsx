@@ -6,8 +6,6 @@ import { HomePage } from "@/components/home";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
 
-export const revalidate = 3600;
-
 export default async function Home() {
   const session = await getSession();
 
