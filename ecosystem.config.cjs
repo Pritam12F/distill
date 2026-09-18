@@ -2,9 +2,7 @@ module.exports = {
   apps: [
     {
       name: "distill",
-      script: "pnpm",
-      args: "start",
-      cwd: "./", // Path to your project directory
+      script: "./.next/standalone/server.js", // Targets the native node server directly
       instances: 1,
       exec_mode: "fork",
       autorestart: true,
@@ -13,7 +11,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 3000,
-        HOSTNAME: "0.0.0.0", // Essential if proxying via Nginx
+        HOSTNAME: "0.0.0.0",
       },
     },
   ],
