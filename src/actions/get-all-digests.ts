@@ -1,7 +1,9 @@
 "use server";
 
+import { getSession } from "@/lib/auth";
 import { newClient } from "@/lib/prisma";
 import { errorDecoder } from "@/utils/error-decoder";
+import { promiseResolver } from "@/utils/resolver";
 import { Digest } from "@prisma/client";
 
 export type AllDigestsPerTopicType = Pick<
@@ -27,20 +29,19 @@ export type AllGroupsType = {
 const DEFAULT_NUM_DAYS = 7;
 
 export async function getAllDigests(page: number): Promise<AllGroupsType> {
-  // const session = await getSession();
+  const session = await getSession();
 
-  // if (!session) {
-  //   return {
-  //     error: "Unauthorized for getting all digests",
-  //   };
-  // }
-
-  console.log(page);
+  if (!session) {
+    return {
+      success: false,
+      error: "Unauthorized for getting all digests",
+    };
+  }
 
   try {
     const topics = await newClient.topic.findMany({
       where: {
-        userId: "cmu808o8m0000ohuwhm1zhfls",
+        userId: session.user.id,
       },
       select: {
         id: true,
@@ -48,38 +49,40 @@ export async function getAllDigests(page: number): Promise<AllGroupsType> {
       },
     });
 
-    const groups = await Promise.all(
+    const groups = await Promise.allSettled(
       topics.map(async (t) => {
         const { digests, hasNext } = await newClient.digest.findByDateRange(
           t.id,
-          "cmu808o8m0000ohuwhm1zhfls",
+          session.user.id,
           page,
         ); // In reverse order..
 
-        return {
-          name: t.name,
-          digests: digests
-            .map((d, i) => ({
-              id: d.id,
-              headline: d.headline,
-              conflict: d.conflict,
-              hasRead: d.hasRead,
-              sources: d._count.articles,
-              topicIndex: i,
-              topic: t.name,
-              topicId: t.id,
-              createdAt: d.createdAt,
-            }))
-            .slice(0, DEFAULT_NUM_DAYS),
-          hasNext,
-        };
+        if (digests.length) {
+          return {
+            name: t.name,
+            digests: digests
+              .map((d, i) => ({
+                id: d.id,
+                headline: d.headline,
+                conflict: d.conflict,
+                hasRead: d.hasRead,
+                sources: d._count.articles,
+                topicIndex: i,
+                topic: t.name,
+                topicId: t.id,
+                createdAt: d.createdAt,
+              }))
+              .slice(0, DEFAULT_NUM_DAYS),
+            hasNext,
+          };
+        }
       }),
     );
 
-    // revalidatePath("/archive");
+    const resolvedGroups = promiseResolver(groups);
 
     return {
-      groups,
+      groups: resolvedGroups,
       success: true,
     };
   } catch (err) {

@@ -24,7 +24,7 @@ export const newClient = prisma.$extends({
         userId: string,
         pageNumber: number,
       ) {
-        const items = pageNumber * 7;
+        const items = Number(pageNumber) * 7;
 
         const digests = await prisma.digest.findMany({
           where: {

@@ -5,8 +5,7 @@ import {
   getAllDigests,
 } from "@/actions/get-all-digests";
 import { ArchiveSkeleton } from "./loading";
-import { useEffect, useRef, useState } from "react";
-import useIsVisible from "@/hooks/use-is-visible";
+import { useEffect, useMemo, useState } from "react";
 import { ArchiveCard } from "@/app/(main)/archive/page";
 import { errorDecoder } from "@/utils/error-decoder";
 import { useInView } from "react-intersection-observer";
@@ -20,21 +19,12 @@ export function LoaderWrapper() {
     }[]
   >([]);
   const [pageNum, setPageNum] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
   const { ref, inView } = useInView({
     /* Optional options */
     threshold: 0,
   });
-
-  //   const fetchPaginatedData = useCallback(async () => {
-  //     setIsLoading(true);
-  //     if (pageNum < 1) return;
-
-  //     if (success && groups?.length) {
-  //       console.log(JSON.stringify(groups.map((g) => g.digests)));
-  //       setLoadedGroups((prev) => [...prev, ...groups]);
-  //     }
-  //     setIsLoading(false);
-  //   }, [setLoadedGroups, setIsLoading, pageNum]);
 
   useEffect(() => {
     if (inView) {
@@ -46,7 +36,6 @@ export function LoaderWrapper() {
           const { groups, success } = await getAllDigests(nextPage);
 
           if (success && groups && groups.length) {
-            console.log(groups);
             setLoadedGroups(groups);
             setPageNum(nextPage);
           }
@@ -58,6 +47,10 @@ export function LoaderWrapper() {
       setter();
     }
   }, [inView, setLoadedGroups, setPageNum]);
+
+  const hasMore = useMemo(() => {
+    return loadedGroups.some((g) => g.hasNext);
+  }, [loadedGroups]);
 
   return (
     <div className="bg-red-500">
@@ -82,7 +75,7 @@ export function LoaderWrapper() {
             );
           }
         })}
-      <ArchiveSkeleton ref={ref} />
+      <ArchiveSkeleton ref={ref} hasMore={hasMore} />
     </div>
   );
 }
