@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { DigestCard } from "./digest-card";
+import { DigestCard } from "../digest/digest-card";
 import { DigestCardProps } from "@/types/digest";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { AuthObjectType } from "@/types/auth";
 import { Fragment, useCallback, useMemo } from "react";
 import { toast } from "sonner";

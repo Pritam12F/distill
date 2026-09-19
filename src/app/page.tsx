@@ -1,8 +1,8 @@
 import { getDigests } from "@/actions/digest-recent";
-import { Landing } from "@/components/landing";
+import { Landing } from "@/components/home/landing";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { HomePage } from "@/components/home";
+import { HomePage } from "@/components/home/home";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
 

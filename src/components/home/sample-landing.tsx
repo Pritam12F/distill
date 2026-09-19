@@ -58,6 +58,7 @@ export function SampleSummary() {
 
   useEffect(() => {
     if (error) {
+      console.log(error);
       toast.error(error);
     }
   }, [error]);
