@@ -25,7 +25,7 @@ export const config = {
     "/signin",
     "/signup",
     "/onboarding",
-    "/archive",
+    // "/archive",
     "/settings",
     "/api/topics/:path*",
     "/api/topics",

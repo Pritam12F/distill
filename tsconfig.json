@@ -28,7 +28,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "ecosystem.config.cjs",
+    "ecosystem.config.js"
   ],
   "exclude": ["node_modules"]
 }

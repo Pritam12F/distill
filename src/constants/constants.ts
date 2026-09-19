@@ -444,4 +444,12 @@ export const topicColors = [
   "bg-[#E2E9EC] text-[#46626E] dark:bg-[#1A2226] dark:text-[#8FB3C0]", // dusty blue
 ];
 
+export const ArchiveChipColors = [
+  "bg-[#F0E8DA] text-[#755815] dark:bg-[#221D17] dark:text-[#D9A441]",
+  "bg-[#F7E9D0] text-[#8A5A18] dark:bg-[#2A2318] dark:text-[#E0B063]",
+  "bg-[#F5E3DA] text-[#8A4F35] dark:bg-[#2A1F1A] dark:text-[#D99878]",
+  "bg-[#E8EDDE] text-[#5A6B3D] dark:bg-[#1F2419] dark:text-[#A8BC8A]",
+  "bg-[#E2E9EC] text-[#46626E] dark:bg-[#1A2226] dark:text-[#8FB3C0]",
+];
+
 export const BASE_URL = process.env.BASE_URL;
