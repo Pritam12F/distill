@@ -1,16 +1,9 @@
 import { DangerZone } from "@/components/settings/danger-zone";
 import { TopicChooser } from "@/components/settings/topic-chooser";
-import { SUGGESTED_TOPICS } from "@/constants/constants";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { X, Plus, ChevronRight, LogOut, Trash2 } from "lucide-react";
+import { ChevronRight, LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
-
-const SELECTED_TOPICS = [
-  "Artificial intelligence",
-  "Web development",
-  "Cybersecurity",
-];
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -27,7 +20,7 @@ export default async function SettingsPage() {
     redirect("/");
   }
 
-  const topics = await prisma.user.findFirst({
+  const user = await prisma.user.findFirst({
     where: {
       id: session.user.id,
     },
@@ -35,6 +28,10 @@ export default async function SettingsPage() {
       topics: true,
     },
   });
+
+  if (!user) {
+    redirect("/");
+  }
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
@@ -49,7 +46,7 @@ export default async function SettingsPage() {
 
       <div className="flex flex-col gap-12">
         {/* TOPICS */}
-        <TopicChooser topics={topics} />
+        <TopicChooser topics={user.topics} />
 
         <hr className="border-t border-[#DCD2C2] dark:border-[#332C24]" />
 

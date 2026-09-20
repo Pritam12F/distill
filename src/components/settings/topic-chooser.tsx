@@ -1,10 +1,18 @@
 "use client";
 
+import { createTopic, deleteTopic } from "@/actions/handle-topic";
 import { SectionLabel } from "@/app/(main)/settings/page";
 import { SUGGESTED_TOPICS } from "@/constants/constants";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Topic } from "@prisma/client";
 import { Plus, X } from "lucide-react";
-import { Fragment, useCallback, useMemo, useState } from "react";
+import {
+  Fragment,
+  startTransition,
+  useCallback,
+  useMemo,
+  useOptimistic,
+} from "react";
 
 const CHIP_COLORS = [
   "bg-[#F0E8DA] text-[#755815] dark:bg-[#221D17] dark:text-[#D9A441]",
@@ -19,8 +27,10 @@ type TopicChooserProps = {
 };
 
 export function TopicChooser({ topics }: TopicChooserProps) {
-  const [selectedTopics, setSelectedTopics] = useState<Topic[]>([...topics]);
-  const [expandedOpen, setExpandedOpen] = useState(false);
+  const [selectedTopics, setSelectedTopics] = useOptimistic<Topic[]>([
+    ...topics,
+  ]);
+  const [expandedOpen, setExpandedOpen] = useOptimistic(false);
 
   const availableTopics = useMemo(() => {
     if (!selectedTopics.length) {
@@ -32,7 +42,14 @@ export function TopicChooser({ topics }: TopicChooserProps) {
     for (let i = 0; i < SUGGESTED_TOPICS.length; i++) {
       for (let j = i; j < selectedTopics.length; j++) {
         if (SUGGESTED_TOPICS[i].name !== selectedTopics[j].name) {
-          filtered.push(SUGGESTED_TOPICS[i]);
+          const topicObj = {
+            name: SUGGESTED_TOPICS[i].name,
+            sources: SUGGESTED_TOPICS[i].sources
+              .filter((s) => s.type === "rss")
+              .map((a) => a.value),
+          };
+
+          filtered.push(topicObj);
         }
       }
     }
@@ -40,9 +57,34 @@ export function TopicChooser({ topics }: TopicChooserProps) {
     return filtered;
   }, [selectedTopics]);
 
-  const topicChangeHandler = useCallback(() => {
-    if (!selectedTopics.length) return;
-  }, [selectedTopics]);
+  const debouncedHandler = useCallback(
+    async (operation: "add" | "delete", topic: Partial<Topic>) => {
+      startTransition(async () => {
+        if (operation === "add") {
+          const currentTopics = selectedTopics;
+          setSelectedTopics([...currentTopics, topic as Topic]);
+
+          await createTopic({
+            name: topic.name!,
+            sources: topic.sources!,
+          });
+        } else if (operation === "delete") {
+          const currentTopics = selectedTopics;
+          currentTopics.splice(
+            selectedTopics.findIndex((s) => s.id === topic.id),
+          );
+          setSelectedTopics((s) => currentTopics);
+
+          await deleteTopic({
+            id: topic.id!,
+          });
+        }
+      });
+    },
+    [selectedTopics],
+  );
+
+  const debouncedCallback = useDebounce(debouncedHandler, 2500);
 
   return (
     <section className="flex flex-col gap-4">
@@ -67,13 +109,9 @@ export function TopicChooser({ topics }: TopicChooserProps) {
               type="button"
               aria-label={`Remove ${topic}`}
               onClick={() => {
-                setSelectedTopics((s) => {
-                  const current = s;
+                if (selectedTopics.length <= 2) return;
 
-                  return current.splice(
-                    current.findIndex((c) => c.id === topic.id),
-                  );
-                });
+                debouncedCallback("delete", topic);
               }}
               className="flex size-8 items-center justify-center rounded-full text-[#6E645A] transition-colors hover:bg-[#F0E8DA] hover:text-[#1A1714] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:text-[#A69A8B] dark:hover:bg-[#221D17] dark:hover:text-[#F3EDE3] dark:focus-visible:ring-[#D9A441]"
             >
@@ -92,6 +130,7 @@ export function TopicChooser({ topics }: TopicChooserProps) {
             setExpandedOpen((s) => false);
             return;
           }
+
           if (topicLength < 5) {
             setExpandedOpen((s) => true);
             return;
@@ -116,7 +155,9 @@ export function TopicChooser({ topics }: TopicChooserProps) {
               <button
                 key={`${topic}-${i}`}
                 type="button"
-                onClick={() => {}}
+                onClick={() => {
+                  debouncedCallback("add", topic);
+                }}
                 className={`rounded-full border border-transparent px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:focus-visible:ring-[#D9A441] ${CHIP_COLORS[(i + 3) % CHIP_COLORS.length]}`}
               >
                 {topic.name}
