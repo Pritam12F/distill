@@ -1,7 +1,6 @@
 "use client";
 
 import { createTopic, deleteTopic } from "@/actions/handle-topic";
-import { SectionLabel } from "@/app/(main)/settings/page";
 import { SUGGESTED_TOPICS } from "@/constants/constants";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Topic } from "@prisma/client";
@@ -13,6 +12,7 @@ import {
   useMemo,
   useOptimistic,
 } from "react";
+import { SectionLabel } from "./section-label";
 
 const CHIP_COLORS = [
   "bg-[#F0E8DA] text-[#755815] dark:bg-[#221D17] dark:text-[#D9A441]",
