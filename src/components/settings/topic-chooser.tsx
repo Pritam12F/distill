@@ -4,7 +4,7 @@ import { SectionLabel } from "@/app/(main)/settings/page";
 import { SUGGESTED_TOPICS } from "@/constants/constants";
 import { Topic } from "@prisma/client";
 import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 
 const CHIP_COLORS = [
   "bg-[#F0E8DA] text-[#755815] dark:bg-[#221D17] dark:text-[#D9A441]",
@@ -20,6 +20,29 @@ type TopicChooserProps = {
 
 export function TopicChooser({ topics }: TopicChooserProps) {
   const [selectedTopics, setSelectedTopics] = useState<Topic[]>([...topics]);
+  const [expandedOpen, setExpandedOpen] = useState(false);
+
+  const availableTopics = useMemo(() => {
+    if (!selectedTopics.length) {
+      return [];
+    }
+
+    const filtered = [];
+
+    for (let i = 0; i < SUGGESTED_TOPICS.length; i++) {
+      for (let j = i; j < selectedTopics.length; j++) {
+        if (SUGGESTED_TOPICS[i].name !== selectedTopics[j].name) {
+          filtered.push(SUGGESTED_TOPICS[i]);
+        }
+      }
+    }
+
+    return filtered;
+  }, [selectedTopics]);
+
+  const topicChangeHandler = useCallback(() => {
+    if (!selectedTopics.length) return;
+  }, [selectedTopics]);
 
   return (
     <section className="flex flex-col gap-4">
@@ -62,29 +85,46 @@ export function TopicChooser({ topics }: TopicChooserProps) {
 
       <button
         type="button"
+        onClick={() => {
+          const topicLength = selectedTopics.length;
+
+          if (topicLength === 5) {
+            setExpandedOpen((s) => false);
+            return;
+          }
+          if (topicLength < 5) {
+            setExpandedOpen((s) => true);
+            return;
+          }
+
+          setExpandedOpen((s) => false);
+        }}
         className="inline-flex w-fit items-center gap-2 rounded-full border border-[#DCD2C2] px-4 py-2 text-sm font-medium text-[#1A1714] transition-colors hover:border-[#755815] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:border-[#332C24] dark:text-[#F3EDE3] dark:hover:border-[#D9A441] dark:focus-visible:ring-[#D9A441]"
       >
         <Plus className="size-4" aria-hidden="true" />
-        Add topic
+        {expandedOpen ? "Close" : "Add topics"}
       </button>
 
       {/* Expanded add-topic view */}
-      <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-[#DCD2C2] p-4 dark:border-[#332C24]">
-        <p className="text-sm text-[#6E645A] dark:text-[#A69A8B]">
-          Pick up to 2 more
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {SUGGESTED_TOPICS.map((topic, i) => (
-            <button
-              key={`${topic.name}${1 + i}`}
-              type="button"
-              className={`rounded-full border border-transparent px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:focus-visible:ring-[#D9A441] ${CHIP_COLORS[(i + 3) % CHIP_COLORS.length]}`}
-            >
-              {topic.name}
-            </button>
-          ))}
-        </div>
-      </div>
+      {expandedOpen && (
+        <Fragment>
+          <p className="text-sm text-[#6E645A] dark:text-[#A69A8B]">
+            Pick up to {selectedTopics.length - 5} more
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {availableTopics.map((topic, i) => (
+              <button
+                key={`${topic}-${i}`}
+                type="button"
+                onClick={() => {}}
+                className={`rounded-full border border-transparent px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#755815] dark:focus-visible:ring-[#D9A441] ${CHIP_COLORS[(i + 3) % CHIP_COLORS.length]}`}
+              >
+                {topic.name}
+              </button>
+            ))}
+          </div>
+        </Fragment>
+      )}
     </section>
   );
 }

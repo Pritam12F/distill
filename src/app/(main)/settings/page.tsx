@@ -49,7 +49,7 @@ export default async function SettingsPage() {
 
       <div className="flex flex-col gap-12">
         {/* TOPICS */}
-        <TopicChooser />
+        <TopicChooser topics={topics} />
 
         <hr className="border-t border-[#DCD2C2] dark:border-[#332C24]" />
 
