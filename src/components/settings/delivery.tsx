@@ -1,7 +1,29 @@
+"use client";
+
 import { ChevronRight } from "lucide-react";
 import { SectionLabel } from "./section-label";
+import { changeBriefing } from "@/actions/change-briefing";
+import { startTransition, useCallback, useOptimistic } from "react";
+import { toast } from "sonner";
 
 export function DeliverySettings() {
+  const [deliveryState, setDeliveryState] = useOptimistic<{
+    paused?: boolean | null;
+  }>({});
+
+  const handleBriefingChange = useCallback(() => {
+    startTransition(async () => {
+      const nextState = !deliveryState.paused;
+      setDeliveryState({ paused: nextState });
+
+      const { success } = await changeBriefing(nextState);
+
+      if (success) {
+        toast(`Briefing was ${nextState ? "resumed" : "paused"}`);
+      }
+    });
+  }, [deliveryState]);
+
   return (
     <section className="flex flex-col gap-4">
       <SectionLabel>Delivery</SectionLabel>
@@ -35,7 +57,10 @@ export function DeliverySettings() {
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-1">
-        <span className="text-sm text-[#1A1714] dark:text-[#F3EDE3]">
+        <span
+          onClick={handleBriefingChange}
+          className="text-sm text-[#1A1714] dark:text-[#F3EDE3]"
+        >
           Pause briefings
         </span>
         <button
