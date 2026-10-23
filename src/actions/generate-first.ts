@@ -37,7 +37,7 @@ export async function generateFirstDigest(): Promise<
   try {
     const user = await prisma.user.findFirst({
       where: {
-        id: auth.session.id,
+        id: auth.user.id,
       },
       select: {
         topics: true,
