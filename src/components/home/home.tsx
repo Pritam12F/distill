@@ -33,11 +33,7 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
 
     const toastId = String(toast.loading("Generating..."));
 
-    const { error, data } = await generateFirstDigest({
-      id: auth?.user.id!,
-      name: auth?.user.name!,
-      email: auth?.user.email!,
-    });
+    const { error, data } = await generateFirstDigest();
 
     if (error) {
       toast.error(error.reason, {

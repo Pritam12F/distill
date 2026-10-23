@@ -91,7 +91,7 @@ export default async function ArchivePage() {
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-16 px-6 py-16">
-      <header className="flex flex-col gap-2">
+      {/* <header className="flex flex-col gap-2">
         <h1 className="font-serif text-4xl tracking-tight text-[#1A1714] dark:text-[#F3EDE3]">
           Archive
         </h1>
@@ -100,7 +100,8 @@ export default async function ArchivePage() {
         </p>
       </header>
       <CardRenderer groups={data.groups ?? []} />
-      <LoaderWrapper />
+      <LoaderWrapper /> */}
+      1
     </main>
   );
 }

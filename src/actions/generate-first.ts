@@ -6,12 +6,9 @@ import { type CoreSuccessType } from "@/types/pipeline";
 import { errorDecoder } from "@/utils/error-decoder";
 import { Digest } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { getSession } from "@/lib/auth";
 
-export async function generateFirstDigest(userDetails: {
-  id: string;
-  name: string;
-  email: string;
-}): Promise<
+export async function generateFirstDigest(): Promise<
   | {
       error: {
         reason: string;
@@ -26,10 +23,21 @@ export async function generateFirstDigest(userDetails: {
       };
     }
 > {
+  const auth = await getSession();
+
+  if(!auth?.session || !auth.user){
+    return {
+      error: {
+        reason: "User not authenticated!"
+      },
+      data: null,
+    }
+  }
+
   try {
     const user = await prisma.user.findFirst({
       where: {
-        id: userDetails.id,
+        id: auth.session.id,
       },
       select: {
         topics: true,
@@ -45,7 +53,11 @@ export async function generateFirstDigest(userDetails: {
       };
     }
 
-    let result = await core(user.topics, userDetails);
+    let result = await core(user.topics, {
+      name: auth.user.name,
+      email: auth.user.email,
+      id: auth.user.id,
+    });
 
     if (!result.success) {
       return {
