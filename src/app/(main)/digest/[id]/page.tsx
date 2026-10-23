@@ -1,6 +1,4 @@
 import "dotenv/config";
-import ConsensusAndConflict from "@/components/consensus-conflict";
-import DigestShare from "@/components/digest-share";
 import { ReactionsSection } from "@/components/reaction";
 import { notFound } from "next/navigation";
 import { BASE_URL, topicColors } from "@/constants/constants";
@@ -8,6 +6,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { getDigest } from "@/actions/fetch-digest";
 import { getSession } from "@/lib/auth";
 import { markAsRead } from "@/actions/mark-as-read";
+import ConsensusAndConflict from "@/components/digest/consensus-conflict";
+import DigestShare from "@/components/digest/digest-share";
 
 export const revalidate = 3600;
 
