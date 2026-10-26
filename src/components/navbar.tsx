@@ -113,7 +113,7 @@ function MinimalVariant({ auth }: NavbarType) {
           distill
           <span className="text-[#755815] dark:text-[#D9A441]">.</span>
         </Link>
-        <AccountMenu name={auth?.user.name} email={auth?.user.email} />
+        {auth?.user && <AccountMenu name={auth?.user.name} email={auth?.user.email} />}
       </div>
     </nav>
   );
