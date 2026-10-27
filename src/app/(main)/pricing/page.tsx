@@ -2,6 +2,8 @@
 
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 const plans = [
   {
@@ -14,7 +16,7 @@ const plans = [
       "Up to 5 sources per topic",
       "Email delivery",
     ],
-    cta: "Get started",
+    cta: "Stay free",
     highlighted: false,
   },
   {
@@ -37,6 +39,16 @@ const plans = [
 ];
 
 export default function PricingPage() {
+    const navigate = useRouter();
+
+const plans = useCallback((model: "free" |"pro")=>{
+    if(model==="free"){
+        navigate.push("/");
+
+        return
+    }
+},[]);
+
   return (
     <div className="min-h-screen bg-[#f7f4ef] dark:bg-[#14110E] py-24">
       <div className="mx-auto max-w-5xl px-6">
@@ -95,6 +107,7 @@ export default function PricingPage() {
               </ul>
 
               <Button
+              onClick={}
                 className="w-full cursor-pointer bg-[#755815] hover:bg-[#5F4711] text-[#FBF6EE] dark:bg-[#D9A441] dark:text-[#14110E] dark:hover:bg-[#C4932F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:focus-visible:outline-[#D9A441]"
                 size="lg"
               >
