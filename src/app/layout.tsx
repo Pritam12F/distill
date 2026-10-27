@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { Toaster } from "sonner";
 import NavbarWrapper from "@/components/navbar";
 import { getSession } from "@/lib/auth";
+import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -37,11 +38,15 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      
       <body className="min-h-full flex flex-col">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <Toaster />
         <NavbarWrapper auth={authObj} />
         {children}
+        </ThemeProvider>
       </body>
     </html>
   );

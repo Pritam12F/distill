@@ -18,7 +18,7 @@ model User {
   topics         Topic[]
   seenArticles   SeenArticle[]
   digestArticles DigestArticle[]
-  userTier       UserTier        @default(FREE)
+  userTier       UserTier?       @default(FREE)
   createdAt      DateTime        @default(now()) 
   updatedAt      DateTime        @updatedAt 
   name           String?

@@ -67,7 +67,7 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
                     onClick={onGenerate}
                     className="rounded-full cursor-pointer bg-[#755815] px-5 py-[21px] text-sm text-[#FBF6EE] transition-colors hover:bg-[#5F4711] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:bg-[#D9A441] dark:text-[#14110E] dark:hover:bg-[#C4932F] dark:focus-visible:outline-[#D9A441]"
                   >
-                    Generate first free digest
+                   Generate first free digest
                   </Button>
 
                   <Link
@@ -91,6 +91,12 @@ export function HomePage({ currDigests, prevDigests, auth }: HomePageProps) {
                         : currDigests[0].date}
                     </span>
                     <DigestCard key={digestProps.id} {...digestProps} />
+                    <Button
+                    onClick={onGenerate}
+                    className="rounded-full cursor-pointer bg-[#755815] px-5 py-[21px] text-sm text-[#FBF6EE] transition-colors hover:bg-[#5F4711] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:bg-[#D9A441] dark:text-[#14110E] dark:hover:bg-[#C4932F] dark:focus-visible:outline-[#D9A441]"
+                    >
+                      Subscribe for more
+                    </Button>
                   </Fragment>
                 );
               })}

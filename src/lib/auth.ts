@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { headers } from "next/headers";
+import { UserTier } from "@prisma/client";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -20,20 +21,30 @@ export const auth = betterAuth({
     },
   },
   user: {
-    deleteUser: {
-      enabled: true,
-      // sendDeleteAccountVerification: async (
-      //   {
-      //     user, // The user object
-      //     url, // The auto-generated URL for deletion
-      //     token, // The verification token  (can be used to generate custom URL)
-      //   },
-      //   request, // The original request object (optional)
-      // ) => {
-      //   // Your email sending logic here
-      //   // Example: sendEmail(data.user.email, "Verify Deletion", data.url);
-      // },
-    },
+    // deleteUser: {
+    //   enabled: true,
+    //   // sendDeleteAccountVerification: async (
+    //   //   {
+    //   //     user, // The user object
+    //   //     url, // The auto-generated URL for deletion
+    //   //     token, // The verification token  (can be used to generate custom URL)
+    //   //   },
+    //   //   request, // The original request object (optional)
+    //   // ) => {
+    //   //   // Your email sending logic here
+    //   //   // Example: sendEmail(data.user.email, "Verify Deletion", data.url);
+    //   // },
+    // },
+
+    additionalFields: {
+      userTier: {
+        type: "string",
+        required: false,
+        defaultValue: "FREE",
+        input: false,
+        returned: true
+      }
+    }
   },
 });
 

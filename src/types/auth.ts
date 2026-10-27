@@ -16,6 +16,7 @@ export type AuthObjectType = {
     email: string;
     emailVerified: boolean;
     name: string;
+    userTier?: string | null;
     image?: string | null | undefined;
   };
 } | null;

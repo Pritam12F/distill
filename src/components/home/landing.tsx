@@ -129,7 +129,7 @@ export async function Landing() {
           /> */}
             <div className="absolute inset-0 bg-[#1A1714]/55 dark:bg-[#14110E]/60" />
 
-            <div className="relative z-10 flex flex-col justify-between gap-12 p-8 text-[#FBF6EE] lg:min-h-[480px] lg:flex-row lg:items-end lg:p-12 dark:text-[#F3EDE3]">
+            <div className="relative z-10 flex flex-col justify-between gap-12 p-8 bg-[#FBF6EE] text-[#14110E] lg:min-h-[480px] lg:flex-row lg:items-end lg:p-12 dark:bg-[#1C1814] dark:text-[#F3EDE3]">
               <div className="max-w-md">
                 <p className="mb-4 text-xs uppercase tracking-[0.22em] opacity-75">
                   Web Development, this morning

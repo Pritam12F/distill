@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { getNavType } from "@/utils/find-nav-type";
 import { AccountMenu } from "./account-menu";
 import { AuthObjectType } from "@/types/auth";
+import { ThemeToggle } from "./theme-changer";
 
 export type NavbarType = {
   auth: AuthObjectType;
@@ -39,7 +40,6 @@ function MainVariant({ auth }: NavbarType) {
           distill
           <span className="text-[#755815] dark:text-[#D9A441]">.</span>
         </Link>
-
         <div className="flex items-center gap-7">
           <Link
             href="/"
@@ -48,22 +48,20 @@ function MainVariant({ auth }: NavbarType) {
           >
             Home
           </Link>
-
           <Link
             href="/archive"
             className="rounded-sm text-sm text-[#8A8075] transition-colors hover:text-[#1A1714] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#755815] dark:text-[#8A8075] dark:hover:text-[#F3EDE3] dark:focus-visible:outline-[#D9A441]"
           >
             Archive
           </Link>
-
           <Link
             href="/settings"
             className="rounded-sm text-sm text-[#8A8075] transition-colors hover:text-[#1A1714] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#755815] dark:text-[#8A8075] dark:hover:text-[#F3EDE3] dark:focus-visible:outline-[#D9A441]"
           >
             Settings
           </Link>
-
           <AccountMenu name={auth?.user.name} email={auth?.user.email} />
+          <ThemeToggle/>
         </div>
       </div>
     </nav>
@@ -81,7 +79,6 @@ function MarketingVariant({ auth }: NavbarType) {
           distill
           <span className="text-[#755815] dark:text-[#D9A441]">.</span>
         </Link>
-
         <div className="flex items-center gap-6">
           <Link
             href="/signin"
@@ -89,13 +86,13 @@ function MarketingVariant({ auth }: NavbarType) {
           >
             Sign in
           </Link>
-
           <Link
             href="/signup"
             className="rounded-full bg-[#755815] px-4 py-2 text-sm text-[#FBF6EE] transition-colors hover:bg-[#5F4711] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#755815] dark:bg-[#D9A441] dark:text-[#14110E] dark:hover:bg-[#C4932F] dark:focus-visible:outline-[#D9A441]"
           >
             Start free
           </Link>
+          <ThemeToggle/>
         </div>
       </div>
     </nav>
@@ -113,7 +110,10 @@ function MinimalVariant({ auth }: NavbarType) {
           distill
           <span className="text-[#755815] dark:text-[#D9A441]">.</span>
         </Link>
-        {auth?.user && <AccountMenu name={auth?.user.name} email={auth?.user.email} />}
+        <div className="flex flex-row space-x-5 items-center">
+          {auth?.user && <AccountMenu name={auth?.user.name} email={auth?.user.email} />}
+          <ThemeToggle/>
+        </div>
       </div>
     </nav>
   );

@@ -84,9 +84,9 @@ export function SampleSummary() {
         ))}
       </ul>
       <div className="mt-6 flex flex-wrap gap-2 border-t border-[#DCD2C2] pt-5 dark:border-[#332C24]">
-        {[topic, conflict].map((tag) => (
+        {[topic, conflict].map((tag, i) => (
           <span
-            key={tag}
+            key={`${tag}-${i}`}
             className="rounded-full bg-[#F0E8DA] px-3 py-1 text-xs text-[#6E645A] dark:bg-[#221D17] dark:text-[#A69A8B]"
           >
             {tag}
